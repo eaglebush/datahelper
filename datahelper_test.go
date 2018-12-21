@@ -2,7 +2,7 @@
 	datahelper and datatable test
 */
 
-package main
+package datahelper
 
 import (
 	_ "database/sql"

@@ -1,4 +1,4 @@
-package main
+package datahelper
 
 import (
 	"database/sql"
