@@ -5,17 +5,18 @@
 package datahelper
 
 import (
-	_ "database/sql"
-	"encoding/json"
 	"fmt"
-	"os"
+	"log"
 	"testing"
 
+	cfg "github.com/eaglebush/config"
 	_ "github.com/eaglebush/datatable"
 )
 
+var config cfg.Configuration
+
 func TestGetData(t *testing.T) {
-	Init()
+	config, _ := cfg.LoadConfig("config.json")
 
 	db := NewDataHelper()
 
@@ -31,24 +32,24 @@ func TestGetData(t *testing.T) {
 		if dt.RowCount > 0 {
 			r := dt.Rows[0]
 
-			fmt.Printf("UserName: %s\r\n", r.Value("UserName").(string))
-			fmt.Printf("Active: %v\r\n", r.Value("Active"))
-			fmt.Printf("AppsHubAdmin: %v\r\n", r.Value("AppsHubAdmin"))
-			fmt.Printf("DateLastLoggedIn: %v\r\n", r.Value("DateLastLoggedIn"))
-			fmt.Printf("DisplayName: %s\r\n", r.Value("DisplayName"))
-			fmt.Printf("EmailAddress: %s\r\n", r.Value("EmailAddress"))
-			fmt.Printf("ForgotPasswordGUID: %s\r\n", r.Value("ForgotPasswordGUID"))
-			fmt.Printf("GMT: %d\r\n", r.Value("GMT").(int64))
-			fmt.Printf("GUID: %s\r\n", r.Value("GUID"))
-			fmt.Printf("LDAPLogin: %v\r\n", r.Value("LDAPLogin"))
-			fmt.Printf("MobileNo: %s\r\n", r.Value("MobileNo"))
-			fmt.Printf("ProfileImageURL: %s\r\n", r.Value("ProfileImageURL"))
+			log.Printf("UserName: %s\r\n", r.Value("UserName").(string))
+			log.Printf("Active: %v\r\n", r.Value("Active"))
+			log.Printf("AppsHubAdmin: %v\r\n", r.Value("AppsHubAdmin"))
+			log.Printf("DateLastLoggedIn: %v\r\n", r.Value("DateLastLoggedIn"))
+			log.Printf("DisplayName: %s\r\n", r.Value("DisplayName"))
+			log.Printf("EmailAddress: %s\r\n", r.Value("EmailAddress"))
+			log.Printf("ForgotPasswordGUID: %s\r\n", r.Value("ForgotPasswordGUID"))
+			log.Printf("GMT: %d\r\n", r.Value("GMT").(int64))
+			log.Printf("GUID: %s\r\n", r.Value("GUID"))
+			log.Printf("LDAPLogin: %v\r\n", r.Value("LDAPLogin"))
+			log.Printf("MobileNo: %s\r\n", r.Value("MobileNo"))
+			log.Printf("ProfileImageURL: %s\r\n", r.Value("ProfileImageURL"))
 		}
 	}
 }
 
 func TestExec(t *testing.T) {
-	Init()
+	config, _ := cfg.LoadConfig("config.json")
 
 	db := &DataHelper{}
 	connected, _ := db.Connect(&config.ConnectionString)
@@ -65,7 +66,7 @@ func TestExec(t *testing.T) {
 }
 
 func TestTransactionExec(t *testing.T) {
-	Init()
+	config, _ := cfg.LoadConfig("config.json")
 
 	db := &DataHelper{}
 	connected, _ := db.Connect(&config.ConnectionString)
@@ -82,13 +83,5 @@ func TestTransactionExec(t *testing.T) {
 			db.Commit()
 			fmt.Printf("Result: %v", affected)
 		}
-	}
-}
-
-func Init() {
-	file, err := os.Open("config/config.json")
-	if err == nil {
-		decoder := json.NewDecoder(file)
-		err = decoder.Decode(&config)
 	}
 }
