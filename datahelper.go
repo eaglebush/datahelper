@@ -3,8 +3,8 @@ package datahelper
 import (
 	"database/sql"
 	"errors"
+	"reflect"
 	"strings"
-	"time"
 
 	_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
 	"github.com/eaglebush/datatable"
@@ -13,17 +13,32 @@ import (
 
 // DataHelper struct
 type DataHelper struct {
-	db         *sql.DB
-	tx         *sql.Tx
-	AllQueryOK bool
-	Errors     []string
-	DriverName string
+	db                      *sql.DB
+	tx                      *sql.Tx
+	AllQueryOK              bool
+	Errors                  []string
+	DriverName              string
+	sequenceQuery           string
+	sequenceNamePlaceHolder string
+}
+
+//SingleRow struct
+type SingleRow struct {
+	HasResult bool
+	Row       datatable.Row
 }
 
 //NewDataHelper - creates a new DataHelper
-func NewDataHelper(driverName string) *DataHelper {
+func NewDataHelper(config interface{}) *DataHelper {
 
-	return &DataHelper{DriverName: driverName}
+	t := reflect.ValueOf(config) //.Elem()
+	//typeOfT := t.Type()
+	//v := typeOfT.Field(0)
+	v := reflect.Indirect(t).Field(0)
+	z := v.Interface()
+	print(z.(*interface{}))
+
+	return &DataHelper{DriverName: ""}
 }
 
 //Connect - connect to the database
@@ -53,12 +68,34 @@ func (dh *DataHelper) Connect(ConnectionString *string) (bool, error) {
 	return true, nil
 }
 
+// GetRow - get a single row result from a query
+func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleRow, error) {
+	r := SingleRow{}
+	dt, err := dh.GetData(preparedQuery, args)
+
+	if err == nil {
+		if dt.RowCount > 0 {
+			r.HasResult = true
+			r.Row.Cells = make([]datatable.Cell, dt.RowCount)
+			for i := 0; i < len(r.Row.Cells); i++ {
+				r.Row.Cells[i].ColumnIndex = i
+				r.Row.Cells[i].ColumnName = dt.Columns[i].Name
+				r.Row.Cells[i].RowIndex = 0
+				r.Row.Cells[i].Value = dt.Rows[0].Cells[i].Value
+			}
+		}
+	}
+
+	return r, err
+}
+
 //GetData - get data from the database
 func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datatable.DataTable, error) {
 	dt := datatable.NewDataTable("data")
 
 	var rows *sql.Rows
 	var err error
+	colsadded := false
 	if dh.tx != nil {
 		rows, err = dh.tx.Query(preparedQuery, arg...)
 	} else {
@@ -72,45 +109,37 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 	defer rows.Close()
 
 	if err == nil {
-		colt, err := rows.ColumnTypes()
-		if colt != nil && rows != nil {
-			vals := make([]interface{}, len(colt))
-
-			for i := 0; i < len(colt); i++ {
+		if rows != nil {
+			cols, _ := rows.Columns()
+			vals := make([]interface{}, len(cols))
+			for i := 0; i < len(cols); i++ {
 				vals[i] = new(interface{})
-				length, _ := colt[i].Length()
-				dt.AddColumn(colt[i].Name(), colt[i].ScanType(), length)
 			}
 
 			r := datatable.Row{}
 
 			for rows.Next() {
+				if colsadded == false {
+					colt, _ := rows.ColumnTypes()
+					for i := 0; i < len(colt); i++ {
+						length, _ := colt[i].Length()
+						dt.AddColumn(colt[i].Name(), colt[i].ScanType(), length)
+					}
+					colsadded = true
+				}
+
 				err = rows.Scan(vals...)
 				if err != nil {
 					continue
 				}
 
 				r = dt.NewRow()
-				for i := 0; i < len(colt); i++ {
+				for i := 0; i < len(cols); i++ {
 					v := vals[i].(*interface{})
 					if *v != nil {
 						r.Cells[i].Value = *v
 					} else {
-						t := colt[i].ScanType().Name()
-						switch strings.ToLower(t) {
-						case "bool":
-							r.Cells[i].Value = false
-						case "time":
-							r.Cells[i].Value = time.Time{}
-						case "string":
-							r.Cells[i].Value = ""
-						case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "unit16", "uint32", "unit64":
-							r.Cells[i].Value = 0
-						case "float32", "float64":
-							r.Cells[i].Value = 0.0
-						default:
-							println("Unsupported type")
-						}
+						r.Cells[i].Value = nil
 					}
 				}
 				dt.AddRow(r)
@@ -195,4 +224,25 @@ func (dh *DataHelper) Rollback() error {
 func (dh *DataHelper) Disconnect() error {
 	dh.tx = nil
 	return dh.db.Close()
+}
+
+//GetSequence - get the next sequence based on the sequence key
+func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
+	if len(dh.sequenceQuery) == 0 {
+		return "", errors.New("Sequence query was not yet setup")
+	}
+
+	q := strings.Replace(dh.sequenceQuery, dh.sequenceNamePlaceHolder, SequenceKey, -1)
+
+	r, err := dh.GetRow(q)
+
+	if err != nil {
+		return "", err
+	}
+
+	if r.HasResult {
+		return r.Row.ValueString(0), err
+	}
+
+	return "", nil
 }

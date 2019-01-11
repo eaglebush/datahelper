@@ -17,7 +17,7 @@ var config cfg.Configuration
 func TestGetData(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
 
-	db := NewDataHelper(config.DriverName)
+	db := NewDataHelper(&config)
 
 	connected, _ := db.Connect(&config.ConnectionString)
 	if connected {
