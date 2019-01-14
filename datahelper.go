@@ -17,9 +17,10 @@ type DataHelper struct {
 	tx                      *sql.Tx
 	AllQueryOK              bool
 	Errors                  []string
+	ConnectionString        string
 	DriverName              string
-	sequenceQuery           string
-	sequenceNamePlaceHolder string
+	SequenceQuery           string
+	SequenceNamePlaceHolder string
 }
 
 //SingleRow struct
@@ -30,20 +31,38 @@ type SingleRow struct {
 
 //NewDataHelper - creates a new DataHelper
 func NewDataHelper(config interface{}) *DataHelper {
+	dh := &DataHelper{}
 
-	t := reflect.ValueOf(config) //.Elem()
-	//typeOfT := t.Type()
-	//v := typeOfT.Field(0)
-	v := reflect.Indirect(t).Field(0)
-	z := v.Interface()
-	print(z.(*interface{}))
+	c := reflect.ValueOf(config).Elem()
+	t := reflect.ValueOf(dh).Elem()
 
-	return &DataHelper{DriverName: ""}
+	//Automatically load whatever is present in the configuration
+	for i := 0; i < c.NumField(); i++ {
+		f := c.Field(i)
+		typeOfC := c.Type()
+		cName := strings.ToLower(typeOfC.Field(i).Name)
+
+		for d := 0; d < t.NumField(); d++ {
+			g := t.Field(d)
+			typeOfT := t.Type()
+			dName := strings.ToLower(typeOfT.Field(d).Name)
+			if cName == dName && t.CanSet() {
+				g.SetString(f.Interface().(string))
+				break
+			}
+		}
+	}
+
+	return dh
 }
 
-//Connect - connect to the database
+//Connect - connect to the database with a specific Connection string
 func (dh *DataHelper) Connect(ConnectionString *string) (bool, error) {
 	var err error
+
+	if len(*ConnectionString) == 0 {
+		return false, errors.New("Connection Error: Connection string is not set")
+	}
 
 	dh.db, err = sql.Open(dh.DriverName, *ConnectionString)
 	if err != nil {
@@ -66,6 +85,11 @@ func (dh *DataHelper) Connect(ConnectionString *string) (bool, error) {
 	dh.AllQueryOK = true
 
 	return true, nil
+}
+
+//ConnectNow - connect to the database from configuration set in the NewDataHelper constructor
+func (dh *DataHelper) ConnectNow() (bool, error) {
+	return dh.Connect(&dh.ConnectionString)
 }
 
 // GetRow - get a single row result from a query
@@ -228,11 +252,11 @@ func (dh *DataHelper) Disconnect() error {
 
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
-	if len(dh.sequenceQuery) == 0 {
+	if len(dh.SequenceQuery) == 0 {
 		return "", errors.New("Sequence query was not yet setup")
 	}
 
-	q := strings.Replace(dh.sequenceQuery, dh.sequenceNamePlaceHolder, SequenceKey, -1)
+	q := strings.Replace(dh.SequenceQuery, dh.SequenceNamePlaceHolder, SequenceKey, -1)
 
 	r, err := dh.GetRow(q)
 
