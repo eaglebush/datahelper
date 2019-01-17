@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"reflect"
+	"strconv"
 	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
@@ -95,7 +96,7 @@ func (dh *DataHelper) ConnectNow() (bool, error) {
 // GetRow - get a single row result from a query
 func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleRow, error) {
 	r := SingleRow{}
-	dt, err := dh.GetData(preparedQuery, args)
+	dt, err := dh.GetData(preparedQuery, args...)
 
 	if err == nil {
 		if dt.RowCount > 0 {
@@ -130,7 +131,11 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 		rows, err = dh.db.Query(preparedQuery, arg...)
 	}
 
-	defer rows.Close()
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
 
 	if err == nil {
 		if rows != nil {
@@ -247,6 +252,11 @@ func (dh *DataHelper) Rollback() error {
 // Disconnect - disconnect from the database
 func (dh *DataHelper) Disconnect() error {
 	dh.tx = nil
+
+	if dh.db == nil {
+		return nil
+	}
+
 	return dh.db.Close()
 }
 
@@ -258,6 +268,7 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 
 	q := strings.Replace(dh.SequenceQuery, dh.SequenceNamePlaceHolder, SequenceKey, -1)
 
+	println(q)
 	r, err := dh.GetRow(q)
 
 	if err != nil {
@@ -265,7 +276,9 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	}
 
 	if r.HasResult {
-		return r.Row.ValueString(0), err
+		sq := r.Row.ValueInt64(0)
+		s := strconv.FormatInt(sq, 10)
+		return s, err
 	}
 
 	return "", nil
