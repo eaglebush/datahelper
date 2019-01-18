@@ -101,7 +101,8 @@ func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleR
 	if err == nil {
 		if dt.RowCount > 0 {
 			r.HasResult = true
-			r.Row.Cells = make([]datatable.Cell, dt.RowCount)
+			r.Row.Cells = make([]datatable.Cell, dt.ColumnCount)
+			r.Row.ColumnCount = dt.ColumnCount
 			for i := 0; i < len(r.Row.Cells); i++ {
 				r.Row.Cells[i].ColumnIndex = i
 				r.Row.Cells[i].ColumnName = dt.Columns[i].Name
