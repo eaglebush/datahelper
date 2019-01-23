@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
-	"github.com/eaglebush/config"
+	cfg "github.com/eaglebush/config"
 	"github.com/eaglebush/datatable"
 	_ "github.com/mattn/go-sqlite3" //SQlite Driver
 )
@@ -131,50 +131,50 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 
 	defer func() {
 		if rows != nil {
+
 			rows.Close()
 		}
 	}()
 
-	if err == nil {
-		if rows != nil {
-			cols, _ := rows.Columns()
-			vals := make([]interface{}, len(cols))
-			for i := 0; i < len(cols); i++ {
-				vals[i] = new(interface{})
-			}
-
-			r := datatable.Row{}
-
-			for rows.Next() {
-				if colsadded == false {
-					colt, _ := rows.ColumnTypes()
-					for i := 0; i < len(colt); i++ {
-						length, _ := colt[i].Length()
-						dt.AddColumn(colt[i].Name(), colt[i].ScanType(), length)
-					}
-					colsadded = true
-				}
-
-				err = rows.Scan(vals...)
-				if err != nil {
-					continue
-				}
-
-				r = dt.NewRow()
-				for i := 0; i < len(cols); i++ {
-					v := vals[i].(*interface{})
-					if *v != nil {
-						r.Cells[i].Value = *v
-					} else {
-						r.Cells[i].Value = nil
-					}
-				}
-				dt.AddRow(r)
-			}
-		}
-	} else {
+	if err != nil {
 		dh.Errors = append(dh.Errors, err.Error())
 		dh.AllQueryOK = false
+		return dt, err
+	}
+
+	cols, _ := rows.Columns()
+	vals := make([]interface{}, len(cols))
+	for i := 0; i < len(cols); i++ {
+		vals[i] = new(interface{})
+	}
+
+	r := datatable.Row{}
+
+	for rows.Next() {
+		if colsadded == false {
+			colt, _ := rows.ColumnTypes()
+			for i := 0; i < len(colt); i++ {
+				length, _ := colt[i].Length()
+				dt.AddColumn(colt[i].Name(), colt[i].ScanType(), length)
+			}
+			colsadded = true
+		}
+
+		err = rows.Scan(vals...)
+		if err != nil {
+			continue
+		}
+
+		r = dt.NewRow()
+		for i := 0; i < len(cols); i++ {
+			v := vals[i].(*interface{})
+			if *v != nil {
+				r.Cells[i].Value = *v
+			} else {
+				r.Cells[i].Value = nil
+			}
+		}
+		dt.AddRow(r)
 	}
 
 	return dt, err
