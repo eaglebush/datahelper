@@ -3,25 +3,22 @@ package datahelper
 import (
 	"database/sql"
 	"errors"
-	"reflect"
 	"strconv"
 	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
+	"github.com/eaglebush/config"
 	"github.com/eaglebush/datatable"
 	_ "github.com/mattn/go-sqlite3" //SQlite Driver
 )
 
 // DataHelper struct
 type DataHelper struct {
-	db                      *sql.DB
-	tx                      *sql.Tx
-	AllQueryOK              bool
-	Errors                  []string
-	ConnectionString        string
-	DriverName              string
-	SequenceQuery           string
-	SequenceNamePlaceHolder string
+	db         *sql.DB
+	tx         *sql.Tx
+	AllQueryOK bool
+	Errors     []string
+	Settings   cfg.Configuration
 }
 
 //SingleRow struct
@@ -31,46 +28,51 @@ type SingleRow struct {
 }
 
 //NewDataHelper - creates a new DataHelper
-func NewDataHelper(config interface{}) *DataHelper {
+func NewDataHelper(config *cfg.Configuration) *DataHelper {
 	dh := &DataHelper{}
+	dh.Settings = *config
 
-	c := reflect.ValueOf(config).Elem()
-	t := reflect.ValueOf(dh).Elem()
+	/*
+		Reserve code for autosetting of struct fields
 
-	//Automatically load whatever is present in the configuration
-	for i := 0; i < c.NumField(); i++ {
-		f := c.Field(i)
-		typeOfC := c.Type()
-		cName := strings.ToLower(typeOfC.Field(i).Name)
+		c := reflect.ValueOf(config).Elem()
+		t := reflect.ValueOf(dh).Elem()
 
-		for d := 0; d < t.NumField(); d++ {
-			g := t.Field(d)
-			typeOfT := t.Type()
-			dName := strings.ToLower(typeOfT.Field(d).Name)
-			if cName == dName && t.CanSet() {
-				g.SetString(f.Interface().(string))
-				break
+		//Automatically load whatever is present in the configuration
+		for i := 0; i < c.NumField(); i++ {
+			f := c.Field(i)
+			typeOfC := c.Type()
+			cName := strings.ToLower(typeOfC.Field(i).Name)
+
+			for d := 0; d < t.NumField(); d++ {
+				g := t.Field(d)
+				typeOfT := t.Type()
+				dName := strings.ToLower(typeOfT.Field(d).Name)
+				if cName == dName && t.CanSet() {
+					g.SetString(f.Interface().(string))
+					break
+				}
 			}
 		}
-	}
+	*/
 
 	return dh
 }
 
-//Connect - connect to the database with a specific Connection string
-func (dh *DataHelper) Connect(ConnectionString *string) (bool, error) {
+//Connect - connect to the database from configuration set in the NewDataHelper constructor
+func (dh *DataHelper) Connect() (bool, error) {
 	var err error
 
-	if len(*ConnectionString) == 0 {
+	if len(dh.Settings.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
 	}
 
-	dh.db, err = sql.Open(dh.DriverName, *ConnectionString)
+	dh.db, err = sql.Open(dh.Settings.DriverName, dh.Settings.ConnectionString)
 	if err != nil {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
-	if dh.DriverName != "sqlite3" {
+	if dh.Settings.DriverName != "sqlite3" {
 		err = dh.db.Ping()
 		if err != nil {
 			return false, errors.New("Connection Error: " + err.Error())
@@ -86,11 +88,6 @@ func (dh *DataHelper) Connect(ConnectionString *string) (bool, error) {
 	dh.AllQueryOK = true
 
 	return true, nil
-}
-
-//ConnectNow - connect to the database from configuration set in the NewDataHelper constructor
-func (dh *DataHelper) ConnectNow() (bool, error) {
-	return dh.Connect(&dh.ConnectionString)
 }
 
 // GetRow - get a single row result from a query
@@ -263,21 +260,32 @@ func (dh *DataHelper) Disconnect() error {
 
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
-	if len(dh.SequenceQuery) == 0 {
-		return "", errors.New("Sequence query was not yet setup")
+	si := &dh.Settings.SequenceInfo
+
+	if len(si.UpsertQuery) == 0 {
+		return "", errors.New("Sequence upsert query was not configured")
 	}
 
-	q := strings.Replace(dh.SequenceQuery, dh.SequenceNamePlaceHolder, SequenceKey, -1)
+	if len(si.ResultQuery) == 0 {
+		return "", errors.New("Sequence result query was not configured")
+	}
 
-	println(q)
-	r, err := dh.GetRow(q)
+	if len(si.NamePlaceHolder) == 0 {
+		return "", errors.New("Sequence name placeholder was not configured")
+	}
 
+	upsertq := strings.Replace(si.UpsertQuery, si.NamePlaceHolder, SequenceKey, -1)
+	resultq := strings.Replace(si.ResultQuery, si.NamePlaceHolder, SequenceKey, -1)
+
+	/* Update generator */
+	_, err := dh.Exec(upsertq)
 	if err != nil {
 		return "", err
 	}
 
-	if r.HasResult {
-		sq := r.Row.ValueInt64(0)
+	sr, err := dh.GetRow(resultq)
+	if sr.HasResult {
+		sq := sr.Row.ValueInt64(0)
 		s := strconv.FormatInt(sq, 10)
 		return s, err
 	}

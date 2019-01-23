@@ -21,7 +21,7 @@ func TestGetData(t *testing.T) {
 
 	db := NewDataHelper(config)
 
-	connected, _ := db.Connect(&config.ConnectionString)
+	connected, _ := db.Connect()
 	if connected {
 		defer db.Disconnect()
 		UserKey := 2
@@ -56,10 +56,9 @@ func TestGetData(t *testing.T) {
 
 func TestGetDataSetValue(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
-
 	db := NewDataHelper(config)
 
-	connected, _ := db.Connect(&config.ConnectionString)
+	connected, _ := db.Connect()
 	if connected {
 		defer db.Disconnect()
 		UserKey := 2
@@ -117,12 +116,11 @@ func TestGetDataSetValue(t *testing.T) {
 
 func TestExec(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
-
-	db := &DataHelper{}
-	connected, _ := db.Connect(&config.ConnectionString)
+	db := NewDataHelper(config)
+	connected, _ := db.Connect()
 	if connected {
 		defer db.Disconnect()
-		r, err := db.Exec(`UPDATE tshUser SET ProfileImageURL=? WHERE UserKey=?`, `https://www.yahoo.com`, 2)
+		r, err := db.Exec(`UPDATE tshUser SET ProfileImageURL=? WHERE UserKey=?`, `http://www.yahoo.com`, 2)
 		if err != nil {
 			log.Printf("Error: " + err.Error())
 		} else {
@@ -134,9 +132,8 @@ func TestExec(t *testing.T) {
 
 func TestTransactionExec(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
-
-	db := &DataHelper{}
-	connected, _ := db.Connect(&config.ConnectionString)
+	db := NewDataHelper(config)
+	connected, _ := db.Connect()
 	if connected {
 		defer db.Disconnect()
 		db.Begin()
@@ -146,6 +143,28 @@ func TestTransactionExec(t *testing.T) {
 			affected, _ := r.RowsAffected()
 			db.Commit()
 			log.Printf("Result: %v", affected)
+		} else {
+			db.Rollback()
+			log.Printf("Error: " + err.Error())
+		}
+	}
+}
+
+func TestGetSequenceX(t *testing.T) {
+	config, _ := cfg.LoadConfig("config.json")
+	db := NewDataHelper(config)
+	connected, err := db.Connect()
+	if err != nil {
+		log.Printf("RErroresult: %v", err.Error())
+	}
+	if connected {
+		defer db.Disconnect()
+		db.Begin()
+
+		key, err := db.GetSequence("USERACCOUNT")
+		if db.AllQueryOK {
+			db.Commit()
+			log.Printf("Result: %v", key)
 		} else {
 			db.Rollback()
 			log.Printf("Error: " + err.Error())
