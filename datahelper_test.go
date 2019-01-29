@@ -21,7 +21,7 @@ func TestGetData(t *testing.T) {
 
 	db := NewDataHelper(config)
 
-	connected, _ := db.Connect()
+	connected, _ := db.Connect("")
 	if connected {
 		defer db.Disconnect()
 		UserKey := 2
@@ -58,7 +58,7 @@ func TestGetDataSetValue(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
 	db := NewDataHelper(config)
 
-	connected, _ := db.Connect()
+	connected, _ := db.Connect("")
 	if connected {
 		defer db.Disconnect()
 		UserKey := 2
@@ -117,7 +117,7 @@ func TestGetDataSetValue(t *testing.T) {
 func TestExec(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
 	db := NewDataHelper(config)
-	connected, _ := db.Connect()
+	connected, _ := db.Connect("")
 	if connected {
 		defer db.Disconnect()
 		r, err := db.Exec(`UPDATE tshUser SET ProfileImageURL=? WHERE UserKey=?`, `http://www.yahoo.com`, 2)
@@ -133,7 +133,7 @@ func TestExec(t *testing.T) {
 func TestTransactionExec(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
 	db := NewDataHelper(config)
-	connected, _ := db.Connect()
+	connected, _ := db.Connect("")
 	if connected {
 		defer db.Disconnect()
 		db.Begin()
@@ -153,7 +153,7 @@ func TestTransactionExec(t *testing.T) {
 func TestGetSequenceX(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.json")
 	db := NewDataHelper(config)
-	connected, err := db.Connect()
+	connected, err := db.Connect("")
 	if err != nil {
 		log.Printf("RErroresult: %v", err.Error())
 	}

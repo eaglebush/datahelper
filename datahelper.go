@@ -14,11 +14,12 @@ import (
 
 // DataHelper struct
 type DataHelper struct {
-	db         *sql.DB
-	tx         *sql.Tx
-	AllQueryOK bool
-	Errors     []string
-	Settings   cfg.Configuration
+	db           *sql.DB
+	tx           *sql.Tx
+	ConnectionID string
+	AllQueryOK   bool
+	Errors       []string
+	Settings     cfg.Configuration
 }
 
 //SingleRow struct
@@ -59,20 +60,27 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 	return dh
 }
 
-//Connect - connect to the database from configuration set in the NewDataHelper constructor
-func (dh *DataHelper) Connect() (bool, error) {
+//Connect - connect to the database from configuration set in the NewDataHelper constructor. Put empty string in the ConnectionID parameter to get the default connection string
+func (dh *DataHelper) Connect(ConnectionID string) (bool, error) {
 	var err error
 
-	if len(dh.Settings.ConnectionString) == 0 {
+	dh.ConnectionID = ConnectionID
+	if ConnectionID == "" {
+		ConnectionID = dh.Settings.DefaultDatabaseID
+	}
+
+	conninfo := dh.Settings.GetDatabaseInfo(ConnectionID)
+
+	if len(conninfo.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
 	}
 
-	dh.db, err = sql.Open(dh.Settings.DriverName, dh.Settings.ConnectionString)
+	dh.db, err = sql.Open(conninfo.DriverName, conninfo.ConnectionString)
 	if err != nil {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
-	if dh.Settings.DriverName != "sqlite3" {
+	if conninfo.StorageType != "FILE" {
 		err = dh.db.Ping()
 		if err != nil {
 			return false, errors.New("Connection Error: " + err.Error())
@@ -95,18 +103,22 @@ func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleR
 	r := SingleRow{}
 	dt, err := dh.GetData(preparedQuery, args...)
 
-	if err == nil {
-		if dt.RowCount > 0 {
-			r.HasResult = true
-			r.Row.Cells = make([]datatable.Cell, dt.ColumnCount)
-			r.Row.ColumnCount = dt.ColumnCount
-			for i := 0; i < len(r.Row.Cells); i++ {
-				r.Row.Cells[i].ColumnIndex = i
-				r.Row.Cells[i].ColumnName = dt.Columns[i].Name
-				r.Row.Cells[i].RowIndex = 0
-				r.Row.Cells[i].Value = dt.Rows[0].Cells[i].Value
-			}
-		}
+	if err != nil {
+		return r, err
+	}
+
+	if dt.RowCount == 0 {
+		return r, errors.New("No records found")
+	}
+
+	r.HasResult = true
+	r.Row.Cells = make([]datatable.Cell, dt.ColumnCount)
+	r.Row.ColumnCount = dt.ColumnCount
+	for i := 0; i < len(r.Row.Cells); i++ {
+		r.Row.Cells[i].ColumnIndex = i
+		r.Row.Cells[i].ColumnName = dt.Columns[i].Name
+		r.Row.Cells[i].RowIndex = 0
+		r.Row.Cells[i].Value = dt.Rows[0].Cells[i].Value
 	}
 
 	return r, err
@@ -131,7 +143,6 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 
 	defer func() {
 		if rows != nil {
-
 			rows.Close()
 		}
 	}()
@@ -260,7 +271,9 @@ func (dh *DataHelper) Disconnect() error {
 
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
-	si := &dh.Settings.SequenceInfo
+	conninfo := dh.Settings.GetDatabaseInfo(dh.ConnectionID)
+
+	si := &conninfo.SequenceGenerator
 
 	if len(si.UpsertQuery) == 0 {
 		return "", errors.New("Sequence upsert query was not configured")
