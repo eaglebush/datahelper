@@ -3,6 +3,7 @@ package datahelper
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,7 @@ type DataHelper struct {
 	db           *sql.DB
 	tx           *sql.Tx
 	ConnectionID string
+	DriverName   string
 	AllQueryOK   bool
 	Errors       []string
 	Settings     cfg.Configuration
@@ -60,7 +62,8 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 	return dh
 }
 
-//Connect - connect to the database from configuration set in the NewDataHelper constructor. Put empty string in the ConnectionID parameter to get the default connection string
+//Connect - connect to the database from configuration set in the NewDataHelper constructor.
+//Put empty string in the ConnectionID parameter to get the default connection string
 func (dh *DataHelper) Connect(ConnectionID string) (bool, error) {
 	var err error
 
@@ -70,6 +73,11 @@ func (dh *DataHelper) Connect(ConnectionID string) (bool, error) {
 	}
 
 	conninfo := dh.Settings.GetDatabaseInfo(ConnectionID)
+	if conninfo == nil {
+		return false, errors.New("Connection Error: Connection ID does not exist")
+	}
+
+	dh.DriverName = conninfo.DriverName
 
 	if len(conninfo.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
@@ -81,6 +89,43 @@ func (dh *DataHelper) Connect(ConnectionID string) (bool, error) {
 	}
 
 	if conninfo.StorageType != "FILE" {
+		err = dh.db.Ping()
+		if err != nil {
+			return false, errors.New("Connection Error: " + err.Error())
+		}
+	}
+
+	/*
+		Resets errors and assumes all queries are OK.
+		AllQueryOK is primarily used in a batch of queries.
+		This will be set to false if one of the query execution fails.
+	*/
+	dh.Errors = make([]string, 0)
+	dh.AllQueryOK = true
+
+	return true, nil
+}
+
+//ConnectEx - connect via specified driver name and connection string
+func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping bool) (bool, error) {
+	var err error
+
+	if len(DriverName) == 0 {
+		return false, errors.New("Connection Error: DriverName is not set")
+	}
+
+	if len(ConnectionString) == 0 {
+		return false, errors.New("Connection Error: Connection string is not set")
+	}
+
+	dh.db, err = sql.Open(DriverName, ConnectionString)
+	if err != nil {
+		return false, errors.New("Connection Error: " + err.Error())
+	}
+
+	dh.DriverName = DriverName
+
+	if Ping {
 		err = dh.db.Ping()
 		if err != nil {
 			return false, errors.New("Connection Error: " + err.Error())
@@ -141,6 +186,8 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 		rows, err = dh.db.Query(preparedQuery, arg...)
 	}
 
+	log.Println("Driver: "+dh.DriverName, "ConnectionID: "+dh.ConnectionID)
+
 	defer func() {
 		if rows != nil {
 			rows.Close()
@@ -163,6 +210,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 
 	for rows.Next() {
 		if colsadded == false {
+			/* Column types for SQlite cannot be retrieved until .Next is called, so we need to retrieve it again */
 			colt, _ := rows.ColumnTypes()
 			for i := 0; i < len(colt); i++ {
 				length, _ := colt[i].Length()
@@ -185,7 +233,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 				r.Cells[i].Value = nil
 			}
 		}
-		dt.AddRow(r)
+		dt.AddRow(&r)
 	}
 
 	return dt, err
@@ -256,6 +304,15 @@ func (dh *DataHelper) Rollback() error {
 	dh.Errors = make([]string, 0)
 
 	return dh.tx.Rollback()
+}
+
+// Prepare - rollbacks a prepare a statement
+func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
+	if dh.tx == nil {
+		return nil, errors.New("Prepared statements need to have a transaction to function. No transaction was initiated")
+	}
+
+	return dh.tx.Prepare(preparedQuery)
 }
 
 // Disconnect - disconnect from the database
