@@ -3,7 +3,6 @@ package datahelper
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 
@@ -15,13 +14,14 @@ import (
 
 // DataHelper struct
 type DataHelper struct {
-	db           *sql.DB
-	tx           *sql.Tx
-	ConnectionID string
-	DriverName   string
-	AllQueryOK   bool
-	Errors       []string
-	Settings     cfg.Configuration
+	db               *sql.DB
+	tx               *sql.Tx
+	ConnectionID     string
+	connectionString string
+	DriverName       string
+	AllQueryOK       bool
+	Errors           []string
+	Settings         cfg.Configuration
 }
 
 //SingleRow struct
@@ -82,6 +82,8 @@ func (dh *DataHelper) Connect(ConnectionID string) (bool, error) {
 	if len(conninfo.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
 	}
+
+	dh.connectionString = conninfo.ConnectionString
 
 	dh.db, err = sql.Open(conninfo.DriverName, conninfo.ConnectionString)
 	if err != nil {
@@ -149,11 +151,13 @@ func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleR
 	dt, err := dh.GetData(preparedQuery, args...)
 
 	if err != nil {
+		r.HasResult = false
 		return r, err
 	}
 
 	if dt.RowCount == 0 {
-		return r, errors.New("No records found")
+		r.HasResult = false
+		return r, nil
 	}
 
 	r.HasResult = true
@@ -186,7 +190,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 		rows, err = dh.db.Query(preparedQuery, arg...)
 	}
 
-	log.Println("Driver: "+dh.DriverName, "ConnectionID: "+dh.ConnectionID)
+	//log.Println("Driver: "+dh.DriverName, "ConnectionID: "+dh.ConnectionID)
 
 	defer func() {
 		if rows != nil {
@@ -214,7 +218,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 			colt, _ := rows.ColumnTypes()
 			for i := 0; i < len(colt); i++ {
 				length, _ := colt[i].Length()
-				dt.AddColumn(colt[i].Name(), colt[i].ScanType(), length)
+				dt.AddColumn(colt[i].Name(), colt[i].ScanType(), length, colt[i].DatabaseTypeName())
 			}
 			colsadded = true
 		}
@@ -280,6 +284,36 @@ func (dh *DataHelper) Begin() (*sql.Tx, error) {
 	return tx, nil
 }
 
+//GetDataReader - returns a DataTable Row with an internal sql.Row object for iteration.
+func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (datatable.Row, error) {
+	row := datatable.Row{}
+
+	var rows *sql.Rows
+	var err error
+
+	if dh.tx != nil {
+		rows, err = dh.tx.Query(preparedQuery, arg...)
+	} else {
+		//If the query is not in a transaction, the following properties are always reset
+		dh.AllQueryOK = true
+		dh.Errors = make([]string, 0)
+
+		rows, err = dh.db.Query(preparedQuery, arg...)
+	}
+
+	if err != nil {
+		dh.Errors = append(dh.Errors, err.Error())
+		dh.AllQueryOK = false
+		return row, err
+	}
+
+	//Set the pointer to the returned rows
+	row.SetSQLRow(rows)
+	row.ResultRows = nil
+
+	return row, err
+}
+
 // Commit - commits a transaction
 func (dh *DataHelper) Commit() error {
 	if dh.tx == nil {
@@ -289,6 +323,9 @@ func (dh *DataHelper) Commit() error {
 	//The following properties are always reset after commit
 	dh.AllQueryOK = true
 	dh.Errors = make([]string, 0)
+	defer func() {
+		dh.tx = nil
+	}()
 
 	return dh.tx.Commit()
 }
@@ -298,15 +335,16 @@ func (dh *DataHelper) Rollback() error {
 	if dh.tx == nil {
 		return errors.New("No transaction was initiated")
 	}
-
 	//The following properties are always reset after rollback
 	dh.AllQueryOK = true
 	dh.Errors = make([]string, 0)
-
+	defer func() {
+		dh.tx = nil
+	}()
 	return dh.tx.Rollback()
 }
 
-// Prepare - rollbacks a prepare a statement
+// Prepare - prepare a statement
 func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
 	if dh.tx == nil {
 		return nil, errors.New("Prepared statements need to have a transaction to function. No transaction was initiated")
@@ -361,4 +399,9 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	}
 
 	return "", nil
+}
+
+//ConnectionString - get the current connection string
+func (dh *DataHelper) ConnectionString() string {
+	return dh.connectionString
 }
