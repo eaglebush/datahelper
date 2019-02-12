@@ -148,6 +148,7 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 // GetRow - get a single row result from a query
 func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleRow, error) {
 	r := SingleRow{}
+
 	dt, err := dh.GetData(preparedQuery, args...)
 
 	if err != nil {
@@ -370,12 +371,8 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 
 	si := &conninfo.SequenceGenerator
 
-	if len(si.UpsertQuery) == 0 {
-		return "", errors.New("Sequence upsert query was not configured")
-	}
-
-	if len(si.ResultQuery) == 0 {
-		return "", errors.New("Sequence result query was not configured")
+	if len(si.UpsertQuery) == 0 && len(si.ResultQuery) == 0 {
+		return "", errors.New("Sequence upsert or result query was not configured")
 	}
 
 	if len(si.NamePlaceHolder) == 0 {
@@ -392,10 +389,14 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	}
 
 	sr, err := dh.GetRow(resultq)
+	if err != nil {
+		return "", err
+	}
+
 	if sr.HasResult {
 		sq := sr.Row.ValueInt64(0)
 		s := strconv.FormatInt(sq, 10)
-		return s, err
+		return s, nil
 	}
 
 	return "", nil
