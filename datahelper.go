@@ -367,6 +367,10 @@ func (dh *DataHelper) Disconnect() error {
 
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
+	if dh.ConnectionID == "" {
+		dh.ConnectionID = dh.Settings.DefaultDatabaseID
+	}
+
 	conninfo := dh.Settings.GetDatabaseInfo(dh.ConnectionID)
 
 	si := &conninfo.SequenceGenerator
