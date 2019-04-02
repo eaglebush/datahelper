@@ -347,11 +347,18 @@ func (dh *DataHelper) Rollback() error {
 
 // Prepare - prepare a statement
 func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
-	if dh.tx == nil {
-		return dh.tx.Prepare(preparedQuery)
+	var stmt *sql.Stmt
+	var err error
+
+	if dh.tx != nil {
+		stmt, err = dh.tx.Prepare(preparedQuery)
 	}
 
-	return dh.db.Prepare(preparedQuery)
+	if dh.db != nil {
+		stmt, err = dh.db.Prepare(preparedQuery)
+	}
+
+	return stmt, err
 }
 
 // Disconnect - disconnect from the database
