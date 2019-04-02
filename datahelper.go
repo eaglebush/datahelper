@@ -348,10 +348,10 @@ func (dh *DataHelper) Rollback() error {
 // Prepare - prepare a statement
 func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
 	if dh.tx == nil {
-		return nil, errors.New("Prepared statements need to have a transaction to function. No transaction was initiated")
+		return dh.tx.Prepare(preparedQuery)
 	}
 
-	return dh.tx.Prepare(preparedQuery)
+	return dh.db.Prepare(preparedQuery)
 }
 
 // Disconnect - disconnect from the database
