@@ -405,7 +405,7 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	}
 
 	if sr.HasResult {
-		sq := sr.Row.ValueInt64(0)
+		sq := sr.Row.ValueInt64Ord(0)
 		s := strconv.FormatInt(sq, 10)
 		return s, nil
 	}
