@@ -169,6 +169,7 @@ func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleR
 		r.Row.Cells[i].ColumnName = dt.Columns[i].Name
 		r.Row.Cells[i].RowIndex = 0
 		r.Row.Cells[i].Value = dt.Rows[0].Cells[i].Value
+		r.Row.Cells[i].DBColumnType = dt.Rows[0].Cells[i].DBColumnType
 	}
 
 	return r, err
