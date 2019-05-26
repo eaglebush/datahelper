@@ -14,14 +14,15 @@ import (
 
 // DataHelper struct
 type DataHelper struct {
-	db               *sql.DB
-	tx               *sql.Tx
-	ConnectionID     string
-	connectionString string
-	DriverName       string
-	AllQueryOK       bool
-	Errors           []string
-	Settings         cfg.Configuration
+	db                  *sql.DB
+	tx                  *sql.Tx
+	ConnectionID        string
+	connectionString    string
+	DriverName          string
+	AllQueryOK          bool
+	Errors              []string
+	Settings            cfg.Configuration
+	CurrentDatabaseInfo *cfg.DatabaseInfo
 }
 
 //SingleRow struct
@@ -64,33 +65,38 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 
 //Connect - connect to the database from configuration set in the NewDataHelper constructor.
 //Put empty string in the ConnectionID parameter to get the default connection string
-func (dh *DataHelper) Connect(ConnectionID string) (bool, error) {
+func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 	var err error
+	connID := ""
 
-	dh.ConnectionID = ConnectionID
-	if ConnectionID == "" {
-		ConnectionID = dh.Settings.DefaultDatabaseID
+	if len(ConnectionID) > 0 {
+		connID = ConnectionID[0]
 	}
 
-	conninfo := dh.Settings.GetDatabaseInfo(ConnectionID)
-	if conninfo == nil {
+	dh.ConnectionID = connID
+	if connID == "" {
+		dh.ConnectionID = dh.Settings.DefaultDatabaseID
+	}
+
+	dh.CurrentDatabaseInfo = dh.Settings.GetDatabaseInfo(dh.ConnectionID)
+	if dh.CurrentDatabaseInfo == nil {
 		return false, errors.New("Connection Error: Connection ID does not exist")
 	}
 
-	dh.DriverName = conninfo.DriverName
+	dh.DriverName = dh.CurrentDatabaseInfo.DriverName
 
-	if len(conninfo.ConnectionString) == 0 {
+	if len(dh.CurrentDatabaseInfo.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
 	}
 
-	dh.connectionString = conninfo.ConnectionString
+	dh.connectionString = dh.CurrentDatabaseInfo.ConnectionString
 
-	dh.db, err = sql.Open(conninfo.DriverName, conninfo.ConnectionString)
+	dh.db, err = sql.Open(dh.CurrentDatabaseInfo.DriverName, dh.CurrentDatabaseInfo.ConnectionString)
 	if err != nil {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
-	if conninfo.StorageType != "FILE" {
+	if dh.CurrentDatabaseInfo.StorageType != "FILE" {
 		err = dh.db.Ping()
 		if err != nil {
 			return false, errors.New("Connection Error: " + err.Error())

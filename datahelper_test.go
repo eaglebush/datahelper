@@ -21,7 +21,7 @@ func TestGetData(t *testing.T) {
 
 	db := NewDataHelper(config)
 
-	connected, _ := db.Connect("")
+	connected, _ := db.Connect()
 	if connected {
 		defer db.Disconnect()
 		UserKey := 2
