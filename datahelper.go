@@ -367,6 +367,8 @@ func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
 
 // Disconnect - disconnect from the database
 func (dh *DataHelper) Disconnect() error {
+	defer func() { dh.db = nil }()
+
 	dh.tx = nil
 
 	if dh.db == nil {
