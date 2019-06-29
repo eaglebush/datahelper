@@ -427,8 +427,8 @@ func (dh *DataHelper) ConnectionString() string {
 	return dh.connectionString
 }
 
-// MaxIdleConnection - max idle connection
-func (dh *DataHelper) MaxIdleConnection(max int) {
+// SetMaxIdleConnection - max idle connection
+func (dh *DataHelper) SetMaxIdleConnection(max int) {
 	if dh.db == nil {
 		return
 	}
