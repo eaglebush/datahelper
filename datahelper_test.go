@@ -108,6 +108,7 @@ func TestGetDataSetValue(t *testing.T) {
 				r.SetValue(&ua.ActivationCode, "ActivationCode")
 				r.SetValue(&ua.ActivationStatus, "ActivationStatus")
 
+				r.Close()
 				fmt.Println(&ua)
 			}
 		}
