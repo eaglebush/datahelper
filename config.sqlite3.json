@@ -1,0 +1,23 @@
+{
+    "HostPort" : 8000,
+    "ConnectionString" : "./appshub.dat",
+    "DriverName" : "sqlite3",
+    "ConvergenceHost" : "http://localhost/convergence",    
+    "HMAC": "thisisanhmacsecretkey",
+    "SequenceInfo" : {
+        "UpsertQuery" : "INSERT INTO KEYGENERATOR(SequenceName, SequenceNo) values('{SequenceName}', 1) ON CONFLICT (SequenceName) DO UPDATE SET SequenceNo=SequenceNo+1;",
+        "ResultQuery" : "SELECT SequenceNo FROM KEYGENERATOR WHERE SequenceName='{SequenceName}';",
+        "NamePlaceHolder": "{SequenceName}"
+    },
+    "Domains": [
+        {
+            "Name":"VDIMDCI",
+            "Host":"192.168.1.24",
+            "Port" : 389,
+            "Path": "DC=VDIMDCI,DC=COM,DC=PH",
+            "AuthorizedUser": "kapitan",
+            "AuthorizedPassword": "D0m@1nAdm1n",
+            "Filter": "(objectClass=person)"
+        }
+    ]
+}

@@ -1,4 +1,0 @@
-{
-    "HostPort" : 8000,
-    "ConnectionString" : "sqlserver://VDIMDCISrvrUser:2RmKsCTNaz7SwZHL@IRONMAN/?database=APPSLICDB&encrypt=disable"
-}

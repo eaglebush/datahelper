@@ -1,4 +1,0 @@
-{
-    "HostPort" : 8000,
-    "ConnectionString" : "sqlserver://sa:password101@KASSGRAPHICS/?database=APPSLICDB&encrypt=disable"
-}

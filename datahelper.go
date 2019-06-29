@@ -6,10 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
+	//_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
 	cfg "github.com/eaglebush/config"
 	"github.com/eaglebush/datatable"
-	_ "github.com/mattn/go-sqlite3" //SQlite Driver
+	//_ "github.com/lib/pq"           //PostGreSQL Driver
+	//_ "github.com/mattn/go-sqlite3" //SQlite Driver
 )
 
 // DataHelper struct
@@ -213,8 +214,9 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 	}
 
 	cols, _ := rows.Columns()
-	vals := make([]interface{}, len(cols))
-	for i := 0; i < len(cols); i++ {
+	lencols := len(cols)
+	vals := make([]interface{}, lencols)
+	for i := 0; i < lencols; i++ {
 		vals[i] = new(interface{})
 	}
 
@@ -237,7 +239,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 		}
 
 		r = dt.NewRow()
-		for i := 0; i < len(cols); i++ {
+		for i := 0; i < lencols; i++ {
 			v := vals[i].(*interface{})
 			if *v != nil {
 				r.Cells[i].Value = *v
