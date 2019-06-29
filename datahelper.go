@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	//_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
 	cfg "github.com/eaglebush/config"
@@ -424,4 +425,28 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 //ConnectionString - get the current connection string
 func (dh *DataHelper) ConnectionString() string {
 	return dh.connectionString
+}
+
+// MaxIdleConnection - max idle connection
+func (dh *DataHelper) MaxIdleConnection(max int) {
+	if dh.db != nil {
+		return
+	}
+	dh.db.SetMaxIdleConns(max)
+}
+
+// SetMaxOpenConns - max open connection
+func (dh *DataHelper) SetMaxOpenConns(max int) {
+	if dh.db != nil {
+		return
+	}
+	dh.db.SetMaxOpenConns(max)
+}
+
+// SetConnMaxLifetime - connection maximum lifetime
+func (dh *DataHelper) SetConnMaxLifetime(d time.Duration) {
+	if dh.db != nil {
+		return
+	}
+	dh.db.SetConnMaxLifetime(d)
 }
