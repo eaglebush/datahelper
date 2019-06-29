@@ -98,10 +98,24 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
+	if dh.CurrentDatabaseInfo.MaxOpenConnection != 0 {
+		dh.db.SetMaxOpenConns(dh.CurrentDatabaseInfo.MaxOpenConnection)
+	}
+
+	if dh.CurrentDatabaseInfo.MaxIdleConnection != 0 {
+		dh.db.SetMaxIdleConns(dh.CurrentDatabaseInfo.MaxIdleConnection)
+	}
+
+	if dh.CurrentDatabaseInfo.MaxConnectionLifetime != 0 {
+		dh.db.SetConnMaxLifetime(time.Hour)
+	}
+
 	if dh.CurrentDatabaseInfo.StorageType != "FILE" {
-		err = dh.db.Ping()
-		if err != nil {
-			return false, errors.New("Connection Error: " + err.Error())
+		if dh.CurrentDatabaseInfo.Ping {
+			err = dh.db.Ping()
+			if err != nil {
+				return false, errors.New("Connection Error: " + err.Error())
+			}
 		}
 	}
 
@@ -134,6 +148,18 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 	}
 
 	dh.DriverName = DriverName
+
+	if dh.CurrentDatabaseInfo.MaxOpenConnection != 0 {
+		dh.db.SetMaxOpenConns(dh.CurrentDatabaseInfo.MaxOpenConnection)
+	}
+
+	if dh.CurrentDatabaseInfo.MaxIdleConnection != 0 {
+		dh.db.SetMaxIdleConns(dh.CurrentDatabaseInfo.MaxIdleConnection)
+	}
+
+	if dh.CurrentDatabaseInfo.MaxConnectionLifetime != 0 {
+		dh.db.SetConnMaxLifetime(time.Hour)
+	}
 
 	if Ping {
 		err = dh.db.Ping()
