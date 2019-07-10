@@ -484,8 +484,20 @@ func (dh *DataHelper) Mark(PointID string) error {
 		return errors.New("No point id was specified")
 	}
 
+	// Get keyword from the config
+	kw := `SAVE TRANSACTION`
+	km := dh.CurrentDatabaseInfo.KeywordMap
+	if len(km) > 0 {
+		for i := range km {
+			if strings.ToLower(km[i].Key) == `SAVEPOINT_START` {
+				kw = km[i].Equivalent
+				break
+			}
+		}
+	}
+
 	// Begin nested transaction
-	_, err := dh.Exec(`SAVE TRANSACTION ` + PointID + `;`)
+	_, err := dh.Exec(kw + ` ` + PointID + `;`)
 	if err != nil {
 		return err
 	}
@@ -502,8 +514,20 @@ func (dh *DataHelper) Discard(PointID string) error {
 		return errors.New("No point id was specified to reject a save point")
 	}
 
+	// Get keyword from the config
+	kw := `ROLLBACK TRANSACTION`
+	km := dh.CurrentDatabaseInfo.KeywordMap
+	if len(km) > 0 {
+		for i := range km {
+			if strings.ToLower(km[i].Key) == `SAVEPOINT_RELEASE` {
+				kw = km[i].Equivalent
+				break
+			}
+		}
+	}
+
 	// Begin nested transaction
-	_, err := dh.Exec(`ROLLBACK TRANSACTION ` + PointID + `;`)
+	_, err := dh.Exec(kw + ` ` + PointID + `;`)
 	if err != nil {
 		return err
 	}
