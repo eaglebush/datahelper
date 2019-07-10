@@ -7,11 +7,8 @@ import (
 	"strings"
 	"time"
 
-	//_ "github.com/denisenkom/go-mssqldb" //SQl Server Driver
 	cfg "github.com/eaglebush/config"
 	"github.com/eaglebush/datatable"
-	//_ "github.com/lib/pq"           //PostGreSQL Driver
-	//_ "github.com/mattn/go-sqlite3" //SQlite Driver
 )
 
 // DataHelper struct
@@ -475,4 +472,40 @@ func (dh *DataHelper) SetConnMaxLifetime(d time.Duration) {
 		return
 	}
 	dh.db.SetConnMaxLifetime(d)
+}
+
+// Mark - starts a named transaction to simulate a save point
+func (dh *DataHelper) Mark(PointID string) error {
+	if dh.tx == nil {
+		return errors.New("The current DataHelper instance is not in a built-in transaction")
+	}
+
+	if PointID == "" {
+		return errors.New("No point id was specified")
+	}
+
+	// Begin nested transaction
+	_, err := dh.Exec(`SAVE TRANSACTION ` + PointID + `;`)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Discard - rejects a named transaction to simulate a save point
+func (dh *DataHelper) Discard(PointID string) error {
+	if dh.tx == nil {
+		return errors.New("The current DataHelper instance is not in a built-in transaction")
+	}
+
+	if PointID == "" {
+		return errors.New("No point id was specified to reject a save point")
+	}
+
+	// Begin nested transaction
+	_, err := dh.Exec(`ROLLBACK TRANSACTION ` + PointID + `;`)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func TestPostgresGetData(t *testing.T) {
-	config, _ := cfg.LoadConfig("config.json")
+	config, _ := cfg.LoadConfig("config.pg.json")
 
 	db := NewDataHelper(config)
 

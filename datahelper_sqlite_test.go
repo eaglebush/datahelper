@@ -10,18 +10,23 @@ import (
 	"testing"
 	"time"
 
+	//_ "github.com/denisenkom/go-mssqldb"
 	cfg "github.com/eaglebush/config"
 	_ "github.com/eaglebush/datatable"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var config cfg.Configuration
 
 func TestGetData(t *testing.T) {
-	config, _ := cfg.LoadConfig("config.json")
+	config, _ := cfg.LoadConfig("config.sqlite3.json")
 
 	db := NewDataHelper(config)
 
-	connected, _ := db.Connect()
+	connected, err := db.Connect()
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
 	if connected {
 		defer db.Disconnect()
 		UserKey := 2
@@ -31,26 +36,29 @@ func TestGetData(t *testing.T) {
 								ForgotPasswordGUID, GMT, GUID, LDAPLogin, 
 								MobileNo, ProfileImageURL, ActivationCode, ActivationStatus
 						   FROM USERACCOUNT WHERE UserKey = ?`, UserKey)
-		if err == nil {
-			if dt.RowCount > 0 {
-				r := dt.Rows[0]
-
-				log.Printf("UserName: %s\r\n", r.Value("UserName").(string))
-				log.Printf("Active: %v\r\n", r.Value("Active"))
-				log.Printf("AppsHubAdmin: %v\r\n", r.Value("AppsHubAdmin"))
-				log.Printf("DateLastLoggedIn: %v\r\n", r.Value("DateLastLoggedIn"))
-				log.Printf("DisplayName: %s\r\n", r.Value("DisplayName"))
-				log.Printf("EmailAddress: %s\r\n", r.Value("EmailAddress"))
-				log.Printf("ForgotPasswordGUID: %s\r\n", r.Value("ForgotPasswordGUID"))
-				log.Printf("GMT: %f\r\n", r.Value("GMT").(float64))
-				log.Printf("GUID: %s\r\n", r.Value("GUID"))
-				log.Printf("LDAPLogin: %v\r\n", r.Value("LDAPLogin"))
-				log.Printf("MobileNo: %s\r\n", r.Value("MobileNo"))
-				log.Printf("ProfileImageURL: %s\r\n", r.Value("ProfileImageURL"))
-				log.Printf("ActivationCode: %s\r\n", r.Value("ActivationCode"))
-				log.Printf("ActivationStatus: %s\r\n", r.Value("ActivationStatus"))
-			}
+		if err != nil {
+			log.Printf("Error: %v", err)
 		}
+
+		if dt.RowCount > 0 {
+			r := dt.Rows[0]
+
+			log.Printf("UserName: %s\r\n", r.Value("UserName").(string))
+			log.Printf("Active: %v\r\n", r.Value("Active"))
+			log.Printf("AppsHubAdmin: %v\r\n", r.Value("AppsHubAdmin"))
+			log.Printf("DateLastLoggedIn: %v\r\n", r.Value("DateLastLoggedIn"))
+			log.Printf("DisplayName: %s\r\n", r.Value("DisplayName"))
+			log.Printf("EmailAddress: %s\r\n", r.Value("EmailAddress"))
+			log.Printf("ForgotPasswordGUID: %s\r\n", r.Value("ForgotPasswordGUID"))
+			log.Printf("GMT: %f\r\n", r.Value("GMT").(float64))
+			log.Printf("GUID: %s\r\n", r.Value("GUID"))
+			log.Printf("LDAPLogin: %v\r\n", r.Value("LDAPLogin"))
+			log.Printf("MobileNo: %s\r\n", r.Value("MobileNo"))
+			log.Printf("ProfileImageURL: %s\r\n", r.Value("ProfileImageURL"))
+			log.Printf("ActivationCode: %s\r\n", r.Value("ActivationCode"))
+			log.Printf("ActivationStatus: %s\r\n", r.Value("ActivationStatus"))
+		}
+
 	}
 }
 

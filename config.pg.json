@@ -1,0 +1,45 @@
+{
+    "HostPort" : 8000,
+    "HMAC": "thisisanhmacsecretkey",
+    "DefaultDatabaseID": "DEFAULT",
+    "MailServer" : {
+        "Host": "192.168.1.20",
+        "Port" : 25,
+        "User" : "",
+        "Password" : "",
+        "SenderName": "AppsHub"
+    },
+    "Databases" : [
+        {
+            "ID" : "DEFAULT",
+            "ConnectionString" : "postgres://postgres:password@127.0.0.1/keannu_sys?sslmode=disable",
+            "DriverName" : "postgres",
+            "StorageType": "SERVER",
+            "GroupID": "",
+            "SequenceGenerator" : {
+                "UpsertQuery" : "",
+                "ResultQuery" : "DECLARE @surrogatekey INT; EXEC dbo.spGetNextSurrogateKey '{SequenceName}', @surrogatekey OUTPUT; SELECT @surrogatekey;",
+                "NamePlaceHolder": "{SequenceName}"
+            }
+        } 
+    ],   
+    "Domains": [
+        {
+            "Name":"VDIMDCI",
+            "Host":"192.168.1.24",
+            "Port" : 389,
+            "Path": "DC=VDIMDCI,DC=COM,DC=PH",
+            "AuthorizedUser": "kapitan",
+            "AuthorizedPassword": "D0m@1nAdm1n",
+            "Filter": "(objectClass=person)"
+        }
+    ],
+    "NotifyRecipients": [
+        {
+            "ID":"test",
+            "FullName":"Test User",
+            "EmailAddress":"testuser@yahoo.com",
+            "MessengerName" : "test"
+        }        
+    ]
+}
