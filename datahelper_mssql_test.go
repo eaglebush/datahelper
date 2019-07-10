@@ -65,10 +65,10 @@ func TestMSSQLNestedTransactions(t *testing.T) {
 		db.Exec(`INSERT INTO tshGenericLookUp (LookupTag, LookupValue, Ordinal, UserFld1, UserFld2, UserFld3) VALUES ('TestTag4','TestValue4',4,'U1', 'U2', 'U3');`)
 		db.Exec(`INSERT INTO tshGenericLookUp (LookupTag, LookupValue, Ordinal, UserFld1, UserFld2, UserFld3) VALUES ('TestTag5','TestValue5',5,'U1', 'U2', 'U3');`)
 
-		err = db.Discard("test")
-		if err != nil {
-			log.Printf("Error Discard test: %v", err)
-		}
+		// err = db.Discard("test")
+		// if err != nil {
+		// 	log.Printf("Error Discard test: %v", err)
+		// }
 
 		err = db.Mark("test2")
 		if err != nil {
@@ -91,10 +91,10 @@ func TestMSSQLNestedTransactions(t *testing.T) {
 		db.Exec(`INSERT INTO tshGenericLookUp (LookupTag, LookupValue, Ordinal, UserFld1, UserFld2, UserFld3) VALUES ('TestTag8','TestValue8',8,'U1', 'U2', 'U3');`)
 		db.Exec(`INSERT INTO tshGenericLookUp (LookupTag, LookupValue, Ordinal, UserFld1, UserFld2, UserFld3) VALUES ('TestTag9','TestValue9',9,'U1', 'U2', 'U3');`)
 
-		err = db.Discard("test3")
-		if err != nil {
-			log.Printf("Error Save test3: %v", err)
-		}
+		// err = db.Discard("test3")
+		// if err != nil {
+		// 	log.Printf("Error Save test3: %v", err)
+		// }
 
 		//db.Exec("DELETE FROM tshGenericLookup")
 

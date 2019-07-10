@@ -12,7 +12,7 @@
     "Databases" : [
         {
             "ID" : "DEFAULT",
-            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.195?database=DMS_MAS500_APP&connection+timeout=0&encrypt=disable",
+            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.39?database=APPSDB&connection+timeout=0&encrypt=disable",
             "DriverName" : "mssql",
             "StorageType": "SERVER",
             "GroupID": "PICKLISTDEST",
