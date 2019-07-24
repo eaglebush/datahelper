@@ -490,7 +490,7 @@ func (dh *DataHelper) Mark(PointID string) error {
 	if len(km) > 0 {
 		for i := range km {
 			if strings.ToLower(km[i].Key) == `SAVEPOINT_START` {
-				kw = km[i].Equivalent
+				kw = km[i].Value
 				break
 			}
 		}
@@ -520,7 +520,7 @@ func (dh *DataHelper) Discard(PointID string) error {
 	if len(km) > 0 {
 		for i := range km {
 			if strings.ToLower(km[i].Key) == `SAVEPOINT_RELEASE` {
-				kw = km[i].Equivalent
+				kw = km[i].Value
 				break
 			}
 		}
