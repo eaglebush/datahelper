@@ -12,8 +12,8 @@
     "Databases" : [
         {
             "ID" : "DEFAULT",
-            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.39?database=APPSDB&connection+timeout=0&encrypt=disable",
-            "DriverName" : "mssql",
+            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.19?database=APPSDB&connection+timeout=0&encrypt=disable",
+            "DriverName" : "sqlserver",
             "StorageType": "SERVER",
             "GroupID": "PICKLISTDEST",
             "SequenceGenerator" : {

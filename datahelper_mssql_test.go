@@ -5,6 +5,7 @@
 package datahelper
 
 import (
+	"database/sql"
 	"log"
 	"testing"
 
@@ -24,7 +25,7 @@ func TestMSSQLGetData(t *testing.T) {
 
 	if connected {
 		defer db.Disconnect()
-		dt, err := db.GetData(`SELECT GroupId, GroupName, GroupNameCode FROM tbcGroupName;`)
+		dt, err := db.GetData(`SELECT GroupId, GroupName, GroupNameCode FROM tbcGroupName WHERE GroupId=@p1;`, 57)
 		if err != nil {
 			log.Printf("Error: %v", err)
 		}
@@ -35,6 +36,29 @@ func TestMSSQLGetData(t *testing.T) {
 			r.Close()
 		}
 
+	}
+}
+
+func TestOutParameter(t *testing.T) {
+	config, _ := cfg.LoadConfig("config.mssql.json")
+
+	db := NewDataHelper(config)
+
+	connected, err := db.Connect()
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+
+	if connected {
+		defer db.Disconnect()
+
+		var NewNumber int
+		NewNumber = 9
+		_, err := db.Exec(`ssh_getnextnumber`, sql.Named(`SequenceName`, `TestOutParameter`), sql.Named(`NewNumber`, sql.Out{Dest: &NewNumber}))
+		if err != nil {
+			log.Printf("Error: %v", err)
+		}
+		log.Printf("Result: %v", NewNumber)
 	}
 }
 
