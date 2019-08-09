@@ -63,7 +63,7 @@ func TestGetData(t *testing.T) {
 }
 
 func TestGetDataSetValue(t *testing.T) {
-	config, _ := cfg.LoadConfig("config.json")
+	config, _ := cfg.LoadConfig("config.sqlite3.json")
 	db := NewDataHelper(config)
 
 	connected, _ := db.Connect("")
