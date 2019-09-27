@@ -125,18 +125,3 @@ func TestMSSQLNestedTransactions(t *testing.T) {
 		db.Commit()
 	}
 }
-
-func TestReplaceParamChar(testing *testing.T) {
-	config, _ := cfg.LoadConfig("config.mssql.json")
-
-	db := NewDataHelper(config)
-	_, err := db.Connect()
-	if err != nil {
-		log.Printf("Error: %v", err)
-	}
-	defer db.Disconnect()
-	db.CurrentDatabaseInfo.ParameterInSequence = true
-	db.CurrentDatabaseInfo.ParameterPlaceholder = `@p`
-
-	log.Println(db.replaceQueryParamMarker(`INSERT INTO Table (col1, col2, col3, ? AS Alias) VALUES (?,?,?);`))
-}
