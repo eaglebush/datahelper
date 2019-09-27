@@ -12,7 +12,7 @@
     "Databases" : [
         {
             "ID" : "DEFAULT",
-            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.19?database=APPSHUB&connection+timeout=0&encrypt=disable",
+            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.19?database=APPSDB&connection+timeout=0&encrypt=disable",
             "DriverName" : "sqlserver",
             "StorageType": "SERVER",
             "GroupID": "PICKLISTDEST",
@@ -20,9 +20,7 @@
                 "UpsertQuery" : "",
                 "ResultQuery" : "DECLARE @surrogatekey INT; EXEC dbo.spGetNextSurrogateKey '{SequenceName}', @surrogatekey OUTPUT; SELECT @surrogatekey;",
                 "NamePlaceHolder": "{SequenceName}"
-            },
-            "ParameterPlaceHolder": "@p",
-            "ParameterInSequence": true
+            }
         } 
     ],   
     "Domains": [
