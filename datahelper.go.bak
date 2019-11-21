@@ -3,7 +3,6 @@ package datahelper
 import (
 	"database/sql"
 	"errors"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -181,9 +180,7 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleRow, error) {
 	r := SingleRow{}
 
-	query := dh.replaceQueryParamMarker(preparedQuery)
-
-	dt, err := dh.GetData(query, args...)
+	dt, err := dh.GetData(preparedQuery, args...)
 
 	if err != nil {
 		r.HasResult = false
@@ -216,18 +213,17 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 	var rows *sql.Rows
 	var err error
 	colsadded := false
-
-	query := dh.replaceQueryParamMarker(preparedQuery)
-
 	if dh.tx != nil {
-		rows, err = dh.tx.Query(query, arg...)
+		rows, err = dh.tx.Query(preparedQuery, arg...)
 	} else {
 		//If the query is not in a transaction, the following properties are always reset
 		dh.AllQueryOK = true
 		dh.Errors = make([]string, 0)
 
-		rows, err = dh.db.Query(query, arg...)
+		rows, err = dh.db.Query(preparedQuery, arg...)
 	}
+
+	//log.Println("Driver: "+dh.DriverName, "ConnectionID: "+dh.ConnectionID)
 
 	defer func() {
 		if rows != nil {
@@ -286,10 +282,8 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 	var result sql.Result
 	var err error
 
-	query := dh.replaceQueryParamMarker(preparedQuery)
-
 	if dh.tx != nil {
-		result, err = dh.tx.Exec(query, arg...)
+		result, err = dh.tx.Exec(preparedQuery, arg...)
 
 		if err != nil {
 			dh.AllQueryOK = false
@@ -304,7 +298,7 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 		dh.AllQueryOK = true
 		dh.Errors = make([]string, 0)
 
-		return dh.db.Exec(query, arg...)
+		return dh.db.Exec(preparedQuery, arg...)
 	}
 
 	dh.AllQueryOK = false
@@ -331,16 +325,14 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 	var rows *sql.Rows
 	var err error
 
-	query := dh.replaceQueryParamMarker(preparedQuery)
-
 	if dh.tx != nil {
-		rows, err = dh.tx.Query(query, arg...)
+		rows, err = dh.tx.Query(preparedQuery, arg...)
 	} else {
 		//If the query is not in a transaction, the following properties are always reset
 		dh.AllQueryOK = true
 		dh.Errors = make([]string, 0)
 
-		rows, err = dh.db.Query(query, arg...)
+		rows, err = dh.db.Query(preparedQuery, arg...)
 	}
 
 	if err != nil {
@@ -388,14 +380,12 @@ func (dh *DataHelper) Rollback() error {
 
 // Prepare - prepare a statement
 func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
-	query := dh.replaceQueryParamMarker(preparedQuery)
-
 	if dh.tx != nil {
-		return dh.tx.Prepare(query)
+		return dh.tx.Prepare(preparedQuery)
 	}
 
 	if dh.db != nil {
-		return dh.db.Prepare(query)
+		return dh.db.Prepare(preparedQuery)
 	}
 
 	return nil, errors.New(`No active connections`)
@@ -412,11 +402,6 @@ func (dh *DataHelper) Disconnect() error {
 	}
 
 	return dh.db.Close()
-}
-
-// IsInTransaction - checks whether the database is in transaction
-func (dh *DataHelper) IsInTransaction() bool {
-	return dh.tx != nil
 }
 
 //GetSequence - get the next sequence based on the sequence key
@@ -547,29 +532,4 @@ func (dh *DataHelper) Discard(PointID string) error {
 		return err
 	}
 	return nil
-}
-
-func (dh *DataHelper) replaceQueryParamMarker(preparedQuery string) string {
-	retstr := preparedQuery
-
-	pattern := `\?` //search for ?
-
-	paramchar := dh.CurrentDatabaseInfo.ParameterPlaceholder
-	paramseq := dh.CurrentDatabaseInfo.ParameterInSequence
-
-	if paramchar == `?` {
-		return retstr
-	}
-	re := regexp.MustCompile(pattern)
-	matches := re.FindAllString(preparedQuery, -1)
-
-	for i, match := range matches {
-		if paramseq {
-			retstr = strings.Replace(retstr, match, paramchar+strconv.Itoa((i+1)), 1)
-		} else {
-			retstr = strings.Replace(retstr, match, paramchar, 1)
-		}
-	}
-
-	return retstr
 }
