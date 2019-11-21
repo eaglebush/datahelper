@@ -404,6 +404,11 @@ func (dh *DataHelper) Disconnect() error {
 	return dh.db.Close()
 }
 
+// IsInTransaction - checks whether the database is in transaction
+func (dh *DataHelper) IsInTransaction() bool {
+	return dh.tx != nil
+}
+
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	if dh.ConnectionID == "" {
