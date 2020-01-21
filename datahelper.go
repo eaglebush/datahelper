@@ -63,8 +63,8 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 	return dh
 }
 
-//Connect - connect to the database from configuration set in the NewDataHelper constructor.
-//Put empty string in the ConnectionID parameter to get the default connection string
+// Connect - connect to the database from configuration set in the NewDataHelper constructor.
+// Put empty string in the ConnectionID parameter to get the default connection string
 func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 	var err error
 	connID := ""
@@ -78,8 +78,7 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 		dh.ConnectionID = dh.Settings.DefaultDatabaseID
 	}
 
-	dh.CurrentDatabaseInfo = dh.Settings.GetDatabaseInfo(dh.ConnectionID)
-	if dh.CurrentDatabaseInfo == nil {
+	if dh.CurrentDatabaseInfo = dh.Settings.GetDatabaseInfo(dh.ConnectionID); dh.CurrentDatabaseInfo == nil {
 		return false, errors.New("Connection Error: Connection ID does not exist")
 	}
 
@@ -91,8 +90,7 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 
 	dh.connectionString = dh.CurrentDatabaseInfo.ConnectionString
 
-	dh.db, err = sql.Open(dh.CurrentDatabaseInfo.DriverName, dh.CurrentDatabaseInfo.ConnectionString)
-	if err != nil {
+	if dh.db, err = sql.Open(dh.CurrentDatabaseInfo.DriverName, dh.CurrentDatabaseInfo.ConnectionString); err != nil {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
@@ -104,14 +102,13 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 		dh.db.SetMaxIdleConns(dh.CurrentDatabaseInfo.MaxIdleConnection)
 	}
 
-	if dh.CurrentDatabaseInfo.MaxConnectionLifetime != 0 {
-		dh.db.SetConnMaxLifetime(time.Hour)
+	if maxlt := dh.CurrentDatabaseInfo.MaxConnectionLifetime; maxlt != 0 {
+		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
 	}
 
 	if dh.CurrentDatabaseInfo.StorageType != "FILE" {
 		if dh.CurrentDatabaseInfo.Ping {
-			err = dh.db.Ping()
-			if err != nil {
+			if err = dh.db.Ping(); err != nil {
 				return false, errors.New("Connection Error: " + err.Error())
 			}
 		}
@@ -128,7 +125,7 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 	return true, nil
 }
 
-//ConnectEx - connect via specified driver name and connection string
+// ConnectEx - connect via specified driver name and connection string
 func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping bool) (bool, error) {
 	var err error
 
@@ -140,8 +137,7 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 		return false, errors.New("Connection Error: Connection string is not set")
 	}
 
-	dh.db, err = sql.Open(DriverName, ConnectionString)
-	if err != nil {
+	if dh.db, err = sql.Open(DriverName, ConnectionString); err != nil {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
@@ -155,13 +151,12 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 		dh.db.SetMaxIdleConns(dh.CurrentDatabaseInfo.MaxIdleConnection)
 	}
 
-	if dh.CurrentDatabaseInfo.MaxConnectionLifetime != 0 {
-		dh.db.SetConnMaxLifetime(time.Hour)
+	if maxlt := dh.CurrentDatabaseInfo.MaxConnectionLifetime; maxlt != 0 {
+		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
 	}
 
 	if Ping {
-		err = dh.db.Ping()
-		if err != nil {
+		if err = dh.db.Ping(); err != nil {
 			return false, errors.New("Connection Error: " + err.Error())
 		}
 	}
@@ -179,13 +174,14 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 
 // GetRow - get a single row result from a query
 func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleRow, error) {
+	var dt *datatable.DataTable
+	var err error
+
 	r := SingleRow{}
 
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
-	dt, err := dh.GetData(query, args...)
-
-	if err != nil {
+	if dt, err = dh.GetData(query, args...); err != nil {
 		r.HasResult = false
 		return r, err
 	}
@@ -251,7 +247,8 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 	r := datatable.Row{}
 
 	for rows.Next() {
-		if colsadded == false {
+
+		if !colsadded {
 			/* Column types for SQlite cannot be retrieved until .Next is called, so we need to retrieve it again */
 			colt, _ := rows.ColumnTypes()
 			for i := 0; i < len(colt); i++ {
@@ -261,8 +258,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 			colsadded = true
 		}
 
-		err = rows.Scan(vals...)
-		if err != nil {
+		if err = rows.Scan(vals...); err != nil {
 			continue
 		}
 
@@ -289,9 +285,8 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
 	if dh.tx != nil {
-		result, err = dh.tx.Exec(query, arg...)
 
-		if err != nil {
+		if result, err = dh.tx.Exec(query, arg...); err != nil {
 			dh.AllQueryOK = false
 			dh.Errors = append(dh.Errors, err.Error())
 		}
@@ -313,18 +308,20 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 
 // Begin - begins a new transaction
 func (dh *DataHelper) Begin() (*sql.Tx, error) {
+	var tx *sql.Tx
+	var err error
+
 	dh.AllQueryOK = true
 
-	tx, err := dh.db.Begin()
-
-	if err != nil {
+	if tx, err = dh.db.Begin(); err != nil {
 		return nil, err
 	}
+
 	dh.tx = tx
 	return tx, nil
 }
 
-//GetDataReader - returns a DataTable Row with an internal sql.Row object for iteration.
+// GetDataReader - returns a DataTable Row with an internal sql.Row object for iteration.
 func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (datatable.Row, error) {
 	row := datatable.Row{}
 
@@ -421,6 +418,9 @@ func (dh *DataHelper) IsInTransaction() bool {
 
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
+	var err error
+	var sr SingleRow
+
 	if dh.ConnectionID == "" {
 		dh.ConnectionID = dh.Settings.DefaultDatabaseID
 	}
@@ -441,13 +441,11 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	resultq := strings.Replace(si.ResultQuery, si.NamePlaceHolder, SequenceKey, -1)
 
 	/* Update generator */
-	_, err := dh.Exec(upsertq)
-	if err != nil {
+	if _, err = dh.Exec(upsertq); err != nil {
 		return "", err
 	}
 
-	sr, err := dh.GetRow(resultq)
-	if err != nil {
+	if sr, err = dh.GetRow(resultq); err != nil {
 		return "", err
 	}
 
@@ -460,7 +458,7 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	return "", nil
 }
 
-//ConnectionString - get the current connection string
+// ConnectionString - get the current connection string
 func (dh *DataHelper) ConnectionString() string {
 	return dh.connectionString
 }
@@ -491,6 +489,7 @@ func (dh *DataHelper) SetConnMaxLifetime(d time.Duration) {
 
 // Mark - starts a named transaction to simulate a save point
 func (dh *DataHelper) Mark(PointID string) error {
+
 	if dh.tx == nil {
 		return errors.New("The current DataHelper instance is not in a built-in transaction")
 	}
@@ -501,8 +500,7 @@ func (dh *DataHelper) Mark(PointID string) error {
 
 	// Get keyword from the config
 	kw := `SAVE TRANSACTION`
-	km := dh.CurrentDatabaseInfo.KeywordMap
-	if len(km) > 0 {
+	if km := dh.CurrentDatabaseInfo.KeywordMap; len(km) > 0 {
 		for i := range km {
 			if strings.ToLower(km[i].Key) == `savepoint_start` {
 				kw = km[i].Value
@@ -512,10 +510,10 @@ func (dh *DataHelper) Mark(PointID string) error {
 	}
 
 	// Begin nested transaction
-	_, err := dh.Exec(kw + ` ` + PointID + `;`)
-	if err != nil {
+	if _, err := dh.Exec(kw + ` ` + PointID + `;`); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -531,8 +529,7 @@ func (dh *DataHelper) Discard(PointID string) error {
 
 	// Get keyword from the config
 	kw := `ROLLBACK TRANSACTION`
-	km := dh.CurrentDatabaseInfo.KeywordMap
-	if len(km) > 0 {
+	if km := dh.CurrentDatabaseInfo.KeywordMap; len(km) > 0 {
 		for i := range km {
 			if strings.ToLower(km[i].Key) == `savepoint_release` {
 				kw = km[i].Value
@@ -542,24 +539,25 @@ func (dh *DataHelper) Discard(PointID string) error {
 	}
 
 	// Begin nested transaction
-	_, err := dh.Exec(kw + ` ` + PointID + `;`)
-	if err != nil {
+	if _, err := dh.Exec(kw + ` ` + PointID + `;`); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (dh *DataHelper) replaceQueryParamMarker(preparedQuery string) string {
-	retstr := preparedQuery
+	var paramchar string
 
+	retstr := preparedQuery
 	pattern := `\?` //search for ?
 
-	paramchar := dh.CurrentDatabaseInfo.ParameterPlaceholder
 	paramseq := dh.CurrentDatabaseInfo.ParameterInSequence
 
-	if paramchar == `?` {
+	if paramchar = dh.CurrentDatabaseInfo.ParameterPlaceholder; paramchar == `?` {
 		return retstr
 	}
+
 	re := regexp.MustCompile(pattern)
 	matches := re.FindAllString(preparedQuery, -1)
 
