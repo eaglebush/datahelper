@@ -274,6 +274,9 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 		dt.AddRow(&r)
 	}
 
+	// Get possible error in the iteration
+	err = rows.Err()
+
 	return dt, err
 }
 
