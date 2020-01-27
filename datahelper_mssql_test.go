@@ -52,7 +52,7 @@ func TestMSSQLGetRowWithWrongParameterTypes(t *testing.T) {
 	if connected {
 		defer db.Disconnect()
 		sr, err := db.GetRow(`SELECT COUNT(*) FROM tcoTraderAddressClass 
-								WHERE TraderTypeID=? AND TraderAddrClassID=? AND TraderAddrClassKey<>?`, `CUSTOMER`, `CLASS1`, 1)
+								WHERE TraderTypeID=? AND TraderAddrClassID=? AND TraderAddrClassKey<>?`, `CUSTOMER`, `CLASS1`, `1`)
 		if err != nil {
 			log.Printf("Error: %v", err)
 			t.Fail()

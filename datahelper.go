@@ -64,7 +64,6 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 }
 
 // Connect - connect to the database from configuration set in the NewDataHelper constructor.
-// Put empty string in the ConnectionID parameter to get the default connection string
 func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 	var err error
 	connID := ""
@@ -82,32 +81,34 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 		return false, errors.New("Connection Error: Connection ID does not exist")
 	}
 
-	dh.DriverName = dh.CurrentDatabaseInfo.DriverName
+	di := dh.CurrentDatabaseInfo
 
-	if len(dh.CurrentDatabaseInfo.ConnectionString) == 0 {
+	dh.DriverName = di.DriverName
+
+	if len(di.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
 	}
 
-	dh.connectionString = dh.CurrentDatabaseInfo.ConnectionString
+	dh.connectionString = di.ConnectionString
 
-	if dh.db, err = sql.Open(dh.CurrentDatabaseInfo.DriverName, dh.CurrentDatabaseInfo.ConnectionString); err != nil {
+	if dh.db, err = sql.Open(di.DriverName, di.ConnectionString); err != nil {
 		return false, errors.New("Connection Error: " + err.Error())
 	}
 
-	if dh.CurrentDatabaseInfo.MaxOpenConnection != 0 {
-		dh.db.SetMaxOpenConns(dh.CurrentDatabaseInfo.MaxOpenConnection)
+	if di.MaxOpenConnection != 0 {
+		dh.db.SetMaxOpenConns(di.MaxOpenConnection)
 	}
 
-	if dh.CurrentDatabaseInfo.MaxIdleConnection != 0 {
-		dh.db.SetMaxIdleConns(dh.CurrentDatabaseInfo.MaxIdleConnection)
+	if di.MaxIdleConnection != 0 {
+		dh.db.SetMaxIdleConns(di.MaxIdleConnection)
 	}
 
-	if maxlt := dh.CurrentDatabaseInfo.MaxConnectionLifetime; maxlt != 0 {
+	if maxlt := di.MaxConnectionLifetime; maxlt != 0 {
 		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
 	}
 
-	if dh.CurrentDatabaseInfo.StorageType != "FILE" {
-		if dh.CurrentDatabaseInfo.Ping {
+	if di.StorageType != "FILE" {
+		if di.Ping {
 			if err = dh.db.Ping(); err != nil {
 				return false, errors.New("Connection Error: " + err.Error())
 			}
@@ -143,15 +144,17 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 
 	dh.DriverName = DriverName
 
-	if dh.CurrentDatabaseInfo.MaxOpenConnection != 0 {
-		dh.db.SetMaxOpenConns(dh.CurrentDatabaseInfo.MaxOpenConnection)
+	di := dh.CurrentDatabaseInfo
+
+	if di.MaxOpenConnection != 0 {
+		dh.db.SetMaxOpenConns(di.MaxOpenConnection)
 	}
 
-	if dh.CurrentDatabaseInfo.MaxIdleConnection != 0 {
-		dh.db.SetMaxIdleConns(dh.CurrentDatabaseInfo.MaxIdleConnection)
+	if di.MaxIdleConnection != 0 {
+		dh.db.SetMaxIdleConns(di.MaxIdleConnection)
 	}
 
-	if maxlt := dh.CurrentDatabaseInfo.MaxConnectionLifetime; maxlt != 0 {
+	if maxlt := di.MaxConnectionLifetime; maxlt != 0 {
 		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
 	}
 
@@ -205,8 +208,9 @@ func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleR
 	return r, err
 }
 
-//GetData - get data from the database
+// GetData - get data from the database and return in a tabular form
 func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datatable.DataTable, error) {
+
 	dt := datatable.NewDataTable("data")
 
 	var rows *sql.Rows
