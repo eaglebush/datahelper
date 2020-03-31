@@ -12,7 +12,7 @@
     "Databases" : [
         {
             "ID" : "DEFAULT",
-            "ConnectionString" : "sqlserver://admin:fantastic4@192.168.1.39?database=DEV_APPSDB&connection+timeout=0&encrypt=disable",
+            "ConnectionString" : "sqlserver://admin:fantastic4@KASSGRAPHICS?database=APPSHUB&connection+timeout=0&encrypt=disable",
             "DriverName" : "sqlserver",
             "StorageType": "SERVER",
             "GroupID": "PICKLISTDEST",
@@ -23,7 +23,35 @@
             },
             "ParameterPlaceHolder": "@p",
             "ParameterInSequence": true
-        } 
+        },
+        {
+            "ID" : "LOCAL",
+            "ConnectionString" : "sqlserver://appshub:fantastic4@KASSGRAPHICS?database=APPSHUB&connection+timeout=0&encrypt=disable",
+            "DriverName" : "sqlserver",
+            "StorageType": "SERVER",
+            "GroupID": "",
+            "SequenceGenerator" : {
+                "UpsertQuery" : "",
+                "ResultQuery" : "DECLARE @surrogatekey INT; EXEC dbo.spGetNextSurrogateKey '{SequenceName}', @surrogatekey OUTPUT; SELECT @surrogatekey;",
+                "NamePlaceHolder": "{SequenceName}"
+            },
+            "ParameterPlaceHolder": "@p",
+            "ParameterInSequence": true
+        },
+        {
+            "ID" : "APPSLICDB",
+            "ConnectionString" : "sqlserver://sa:password101@KASSGRAPHICS?database=APPSLICDB&connection+timeout=0&encrypt=disable",
+            "DriverName" : "sqlserver",
+            "StorageType": "SERVER",
+            "GroupID": "",
+            "SequenceGenerator" : {
+                "UpsertQuery" : "",
+                "ResultQuery" : "DECLARE @surrogatekey INT; EXEC dbo.sshGetNextNumberOut '{SequenceName}', @surrogatekey OUTPUT; SELECT @surrogatekey;",
+                "NamePlaceHolder": "{SequenceName}"
+            },
+            "ParameterPlaceHolder": "@p",
+            "ParameterInSequence": true
+        }
     ],   
     "Domains": [
         {

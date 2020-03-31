@@ -39,6 +39,50 @@ func TestMSSQLGetData(t *testing.T) {
 	}
 }
 
+func TestGetRow(t *testing.T) {
+	config, _ := cfg.LoadConfig("config.mssql.json")
+
+	db := NewDataHelper(config)
+
+	connected, err := db.Connect("LOCAL")
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+
+	if connected {
+		defer db.Disconnect()
+		sr, err := db.GetRow([]string{`COUNT(*)`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			t.Fail()
+		}
+		if sr.HasResult {
+			log.Printf("Data: %v", sr.Row.ValueInt64Ord(0))
+		}
+
+	}
+}
+
+func TestSequence(t *testing.T) {
+	config, _ := cfg.LoadConfig("config.mssql.json")
+
+	db := NewDataHelper(config)
+
+	connected, err := db.Connect("APPSLICDB")
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+
+	if connected {
+		defer db.Disconnect()
+		key, err := db.GetSequence("Test")
+		if err != nil {
+			log.Printf("Error: %v", err)
+		}
+		log.Printf("Sequence: %s", key)
+	}
+}
+
 func TestMSSQLGetRowWithWrongParameterTypes(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.mssql.json")
 
@@ -51,8 +95,7 @@ func TestMSSQLGetRowWithWrongParameterTypes(t *testing.T) {
 
 	if connected {
 		defer db.Disconnect()
-		sr, err := db.GetRow(`SELECT COUNT(*) FROM tcoTraderAddressClass 
-								WHERE TraderTypeID=? AND TraderAddrClassID=? AND TraderAddrClassKey<>?`, `CUSTOMER`, `CLASS1`, `1`)
+		sr, err := db.GetRow([]string{`COUNT(*)`}, `tcoTraderAddressClass WHERE TraderTypeID=? AND TraderAddrClassID=? AND TraderAddrClassKey<>?`, `CUSTOMER`, `CLASS1`, `1`)
 		if err != nil {
 			log.Printf("Error: %v", err)
 			t.Fail()

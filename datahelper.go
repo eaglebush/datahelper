@@ -176,34 +176,78 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 }
 
 // GetRow - get a single row result from a query
-func (dh *DataHelper) GetRow(preparedQuery string, args ...interface{}) (SingleRow, error) {
-	var dt *datatable.DataTable
-	var err error
+func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, args ...interface{}) (SingleRow, error) {
 
-	r := SingleRow{}
+	var (
+		err   error
+		row   *sql.Row
+		cma   string
+		query string
+	)
 
-	query := dh.replaceQueryParamMarker(preparedQuery)
+	r := SingleRow{
+		HasResult: false,
+	}
+	r.Row = datatable.Row{}
 
-	if dt, err = dh.GetData(query, args...); err != nil {
-		r.HasResult = false
+	if len(columns) == 0 {
+		return r, errors.New("No column was specified")
+	}
+
+	if tableNameWithParameters == "" {
+		return r, errors.New("No tablename was specified")
+	}
+
+	cma = ""
+	query = "SELECT"
+	for _, c := range columns {
+		query += cma + " " + c
+		cma = ","
+	}
+	query += " FROM "
+	query += dh.replaceQueryParamMarker(tableNameWithParameters)
+
+	if dh.tx != nil {
+		row = dh.tx.QueryRow(query, args...)
+	} else {
+		//If the query is not in a transaction, the following properties are always reset
+		dh.AllQueryOK = true
+		dh.Errors = make([]string, 0)
+
+		row = dh.db.QueryRow(query, args...)
+	}
+
+	lencols := len(columns)
+	r.Row.ResultRows = make([]interface{}, lencols)
+	for i := 0; i < lencols; i++ {
+		r.Row.ResultRows[i] = new(interface{})
+	}
+
+	if err = row.Scan(r.Row.ResultRows...); err != nil {
+		dh.Errors = append(dh.Errors, err.Error())
+		dh.AllQueryOK = false
 		return r, err
 	}
 
-	if dt.RowCount == 0 {
-		r.HasResult = false
-		return r, nil
+	r.Row.Cells = make([]datatable.Cell, lencols)
+	r.Row.ColumnCount = lencols
+
+	for i := 0; i < lencols; i++ {
+
+		r.Row.Cells[i].ColumnName = columns[i]
+		r.Row.Cells[i].DBColumnType = ""
+		r.Row.Cells[i].ColumnIndex = i
+		r.Row.Cells[i].RowIndex = 0
+
+		v := r.Row.ResultRows[i].(*interface{})
+		if *v != nil {
+			r.Row.Cells[i].Value = *v
+		} else {
+			r.Row.Cells[i].Value = nil
+		}
 	}
 
-	r.HasResult = true
-	r.Row.Cells = make([]datatable.Cell, dt.ColumnCount)
-	r.Row.ColumnCount = dt.ColumnCount
-	for i := 0; i < len(r.Row.Cells); i++ {
-		r.Row.Cells[i].ColumnIndex = i
-		r.Row.Cells[i].ColumnName = dt.Columns[i].Name
-		r.Row.Cells[i].RowIndex = 0
-		r.Row.Cells[i].Value = dt.Rows[0].Cells[i].Value
-		r.Row.Cells[i].DBColumnType = dt.Rows[0].Cells[i].DBColumnType
-	}
+	r.HasResult = (lencols != 0)
 
 	return r, err
 }
@@ -426,7 +470,8 @@ func (dh *DataHelper) IsInTransaction() bool {
 //GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	var err error
-	var sr SingleRow
+	//var sr SingleRow
+	var dt *datatable.DataTable
 
 	if dh.ConnectionID == "" {
 		dh.ConnectionID = dh.Settings.DefaultDatabaseID
@@ -452,12 +497,12 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 		return "", err
 	}
 
-	if sr, err = dh.GetRow(resultq); err != nil {
+	if dt, err = dh.GetData(resultq); err != nil {
 		return "", err
 	}
 
-	if sr.HasResult {
-		sq := sr.Row.ValueInt64Ord(0)
+	if dt.RowCount > 0 {
+		sq := dt.Rows[0].ValueInt64Ord(0)
 		s := strconv.FormatInt(sq, 10)
 		return s, nil
 	}
