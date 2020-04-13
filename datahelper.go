@@ -16,22 +16,38 @@ import (
 type DataHelper struct {
 	db                  *sql.DB
 	tx                  *sql.Tx
-	ConnectionID        string
 	connectionString    string
-	DriverName          string
-	AllQueryOK          bool
-	Errors              []string
-	Settings            cfg.Configuration
-	CurrentDatabaseInfo *cfg.DatabaseInfo
+	DriverName          string            // Driver name set in the configuration file
+	ConnectionID        string            // Connection ID set in the configuration file
+	AllQueryOK          bool              // Flags if all queries are ok in a non-transaction mode
+	Errors              []string          // Errors encountered
+	Settings            cfg.Configuration // Settings from the configuration
+	CurrentDatabaseInfo *cfg.DatabaseInfo // Current database information
+	RowLimitInfo        RowLimiting       // Row limiting information
 }
 
-//SingleRow struct
+// RowLimitPlacement - row limit placement of row limits
+type RowLimitPlacement int
+
+// Constants
+const (
+	RowLimitingFront RowLimitPlacement = 0
+	RowLimitingRear  RowLimitPlacement = 1
+)
+
+// RowLimiting - row limiting setup
+type RowLimiting struct {
+	Keyword   string
+	Placement RowLimitPlacement
+}
+
+// SingleRow struct
 type SingleRow struct {
 	HasResult bool
 	Row       datatable.Row
 }
 
-//NewDataHelper - creates a new DataHelper
+// NewDataHelper - creates a new DataHelper
 func NewDataHelper(config *cfg.Configuration) *DataHelper {
 	dh := &DataHelper{}
 	dh.Settings = *config
@@ -84,6 +100,7 @@ func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
 	di := dh.CurrentDatabaseInfo
 
 	dh.DriverName = di.DriverName
+	dh.RowLimitInfo = getRowLimiting(dh.DriverName)
 
 	if len(di.ConnectionString) == 0 {
 		return false, errors.New("Connection Error: Connection string is not set")
@@ -143,6 +160,7 @@ func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping
 	}
 
 	dh.DriverName = DriverName
+	dh.RowLimitInfo = getRowLimiting(dh.DriverName)
 
 	di := dh.CurrentDatabaseInfo
 
@@ -622,4 +640,23 @@ func (dh *DataHelper) replaceQueryParamMarker(preparedQuery string) string {
 	}
 
 	return retstr
+}
+
+func getRowLimiting(driverName string) RowLimiting {
+
+	// default row limiting function (SQL Server)
+	rl := RowLimiting{
+		Keyword:   "TOP",
+		Placement: RowLimitingFront,
+	}
+
+	switch driverName {
+	case "mysql", "sqlite", "postgres":
+		rl = RowLimiting{
+			Keyword:   "LIMIT",
+			Placement: RowLimitingRear,
+		}
+	}
+
+	return rl
 }
