@@ -63,6 +63,32 @@ func TestGetRow(t *testing.T) {
 	}
 }
 
+func TestExists(t *testing.T) {
+	config, _ := cfg.LoadConfig("config.mssql.json")
+
+	db := NewDataHelper(config)
+
+	connected, err := db.Connect("LOCAL")
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+
+	if connected {
+		defer db.Disconnect()
+
+		// db.RowLimitInfo.Keyword = "LIMIT"
+		// db.RowLimitInfo.Placement = RowLimitingRear
+
+		exists, err := db.Exists(`applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			t.Fail()
+		}
+
+		log.Printf("Exists: %v", exists)
+	}
+}
+
 func TestSequence(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.mssql.json")
 

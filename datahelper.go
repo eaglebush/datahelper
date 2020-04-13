@@ -485,7 +485,7 @@ func (dh *DataHelper) IsInTransaction() bool {
 	return dh.tx != nil
 }
 
-//GetSequence - get the next sequence based on the sequence key
+// GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	var err error
 	//var sr SingleRow
@@ -526,6 +526,60 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// Exists - checks if the record exists
+func (dh *DataHelper) Exists(tableNameWithParameters string, args ...interface{}) (bool, error) {
+
+	var (
+		err     error
+		row     *sql.Row
+		query   string
+		singval interface{}
+	)
+
+	if tableNameWithParameters == "" {
+		return false, errors.New("No tablename was specified")
+	}
+
+	query = "SELECT "
+
+	sel := ""
+	rl := dh.RowLimitInfo
+	if rl.Placement == RowLimitingFront {
+		sel = rl.Keyword + " 1 1 AS Result"
+	}
+
+	if rl.Placement == RowLimitingRear {
+		sel = "1 AS Result"
+		tableNameWithParameters += " " + rl.Keyword + " 1"
+	}
+
+	query += sel + " FROM "
+	query += dh.replaceQueryParamMarker(tableNameWithParameters)
+
+	if dh.tx != nil {
+		row = dh.tx.QueryRow(query, args...)
+	} else {
+		dh.AllQueryOK = true
+		dh.Errors = make([]string, 0)
+
+		row = dh.db.QueryRow(query, args...)
+	}
+
+	singval = new(interface{})
+
+	if err = row.Scan(singval); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			dh.Errors = append(dh.Errors, err.Error())
+			dh.AllQueryOK = false
+			return false, err
+		}
+
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // ConnectionString - get the current connection string
