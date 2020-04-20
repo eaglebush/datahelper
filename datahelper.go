@@ -241,10 +241,18 @@ func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, a
 		r.Row.ResultRows[i] = new(interface{})
 	}
 
+	norows := false
+
 	if err = row.Scan(r.Row.ResultRows...); err != nil {
-		dh.Errors = append(dh.Errors, err.Error())
-		dh.AllQueryOK = false
-		return r, err
+
+		norows = errors.Is(err, sql.ErrNoRows)
+		if !norows {
+			dh.Errors = append(dh.Errors, err.Error())
+			dh.AllQueryOK = false
+			return r, err
+		}
+
+		err = nil
 	}
 
 	r.Row.Cells = make([]datatable.Cell, lencols)
@@ -257,15 +265,18 @@ func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, a
 		r.Row.Cells[i].ColumnIndex = i
 		r.Row.Cells[i].RowIndex = 0
 
-		v := r.Row.ResultRows[i].(*interface{})
-		if *v != nil {
-			r.Row.Cells[i].Value = *v
-		} else {
-			r.Row.Cells[i].Value = nil
+		if !norows {
+			v := r.Row.ResultRows[i].(*interface{})
+			if *v != nil {
+				r.Row.Cells[i].Value = *v
+			} else {
+				r.Row.Cells[i].Value = nil
+			}
 		}
+
 	}
 
-	r.HasResult = (lencols != 0)
+	r.HasResult = !norows
 
 	return r, err
 }
