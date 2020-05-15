@@ -709,17 +709,17 @@ func (dh *DataHelper) replaceQueryParamMarker(preparedQuery string) string {
 
 func getRowLimiting(driverName string) RowLimiting {
 
-	// default row limiting function (SQL Server)
+	// default row limiting function (mysql, postgres and sqlite3)
 	rl := RowLimiting{
-		Keyword:   "TOP",
-		Placement: RowLimitingFront,
+		Keyword:   "LIMIT",
+		Placement: RowLimitingRear,
 	}
 
 	switch driverName {
-	case "mysql", "sqlite", "postgres":
+	case "mssql", "sqlserver":
 		rl = RowLimiting{
 			Keyword:   "LIMIT",
-			Placement: RowLimitingRear,
+			Placement: RowLimitingFront,
 		}
 	}
 
