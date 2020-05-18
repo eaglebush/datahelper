@@ -25,14 +25,15 @@ func TestMSSQLGetData(t *testing.T) {
 
 	if connected {
 		defer db.Disconnect()
-		dt, err := db.GetData(`SELECT GroupId, GroupName, GroupNameCode FROM tbcGroupName WHERE GroupId=@p1;`, 57)
+		dt, err := db.GetData(`SELECT user_name, display_name, appshub_admin FROM useraccount WHERE user_key=@p1;`, 1)
 		if err != nil {
 			log.Printf("Error: %v", err)
 		}
 		for _, r := range dt.Rows {
-			log.Printf("Code: %v\r\n", r.Value("GroupId"))
-			log.Printf("Description: %v\r\n", r.Value("GroupName"))
-			log.Printf("Value: %v\r\n", r.Value("GroupNameCode"))
+			log.Printf("Code: %v\r\n", r.Value("user_name"))
+			log.Printf("Description: %v\r\n", r.Value("display_name"))
+			//log.Printf("Value: %v\r\n", r.Value("appshub_admin"))
+			log.Printf("AppsHubAdmin: %v\r\n", r.ValueBool("appshub_admin"))
 			r.Close()
 		}
 

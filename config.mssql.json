@@ -12,7 +12,7 @@
     "Databases" : [
         {
             "ID" : "DEFAULT",
-            "ConnectionString" : "sqlserver://admin:fantastic4@KASSGRAPHICS?database=APPSHUB&connection+timeout=0&encrypt=disable",
+            "ConnectionString" : "sqlserver://appshub:fantastic4@KASSGRAPHICS?database=APPSHUB&connection+timeout=0&encrypt=disable",
             "DriverName" : "sqlserver",
             "StorageType": "SERVER",
             "GroupID": "PICKLISTDEST",

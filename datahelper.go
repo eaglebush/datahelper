@@ -10,6 +10,7 @@ import (
 
 	cfg "github.com/eaglebush/config"
 	"github.com/eaglebush/datatable"
+	//"eaglebush/datatable"
 )
 
 // DataHelper struct
@@ -718,7 +719,7 @@ func getRowLimiting(driverName string) RowLimiting {
 	switch driverName {
 	case "mssql", "sqlserver":
 		rl = RowLimiting{
-			Keyword:   "LIMIT",
+			Keyword:   "TOP",
 			Placement: RowLimitingFront,
 		}
 	}
