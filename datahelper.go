@@ -9,8 +9,8 @@ import (
 	"time"
 
 	cfg "github.com/eaglebush/config"
-	//"github.com/eaglebush/datatable"
-	"eaglebush/datatable"
+	"github.com/eaglebush/datatable"
+	//"eaglebush/datatable"
 )
 
 // DataHelper struct
