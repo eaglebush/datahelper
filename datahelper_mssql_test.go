@@ -19,6 +19,10 @@ func TestParsePublicColumn(t *testing.T) {
 	log.Println(getAliasFromColumnName(`COUNT(*) Cou [ntX`))
 	log.Println(getAliasFromColumnName(`COUNT(*) AS [CountX You]`))
 	log.Println(getAliasFromColumnName(`COUNT(*) [CountX You]`))
+	log.Println(getAliasFromColumnName(`tr.WhatEver`))
+	log.Println(getAliasFromColumnName(`tr.WhatEver AS Whenever`))
+	log.Println(getAliasFromColumnName(`ISNULL(tr.WhatEver,'.') Howeverx`))
+	log.Println(getAliasFromColumnName(`ISNULL(tr.WhatEver,'.') AS Howevery`))
 }
 
 func TestMSSQLGetData(t *testing.T) {
