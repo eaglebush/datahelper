@@ -13,6 +13,14 @@ import (
 	cfg "github.com/eaglebush/config"
 )
 
+func TestParsePublicColumn(t *testing.T) {
+	log.Println(getAliasFromColumnName(`COUNT(*) AS CountX`))
+	log.Println(getAliasFromColumnName(`COUNT(*) CountX`))
+	log.Println(getAliasFromColumnName(`COUNT(*) Cou [ntX`))
+	log.Println(getAliasFromColumnName(`COUNT(*) AS [CountX You]`))
+	log.Println(getAliasFromColumnName(`COUNT(*) [CountX You]`))
+}
+
 func TestMSSQLGetData(t *testing.T) {
 	config, _ := cfg.LoadConfig("config.mssql.json")
 
@@ -45,20 +53,23 @@ func TestGetRow(t *testing.T) {
 
 	db := NewDataHelper(config)
 
-	connected, err := db.Connect("LOCAL")
+	connected, err := db.Connect("DEFAULT")
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
 
 	if connected {
 		defer db.Disconnect()
-		sr, err := db.GetRow([]string{`COUNT(*)`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
+		//sr, err := db.GetRow([]string{`COUNT(*)`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
+		//sr, err := db.GetRow([]string{`COUNT(*) AS CountX`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
+		sr, err := db.GetRow([]string{`COUNT(*) AS [CountX You]`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
 		if err != nil {
 			log.Printf("Error: %v", err)
 			t.Fail()
 		}
 		if sr.HasResult {
 			log.Printf("Data: %v", sr.Row.ValueInt64Ord(0))
+			log.Printf("Data: %v", sr.Row.ValueInt64("CountX You"))
 		}
 
 	}

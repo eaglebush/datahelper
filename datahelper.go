@@ -261,7 +261,7 @@ func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, a
 
 	for i := 0; i < lencols; i++ {
 
-		r.Row.Cells[i].ColumnName = columns[i]
+		r.Row.Cells[i].ColumnName = getAliasFromColumnName(columns[i])
 		r.Row.Cells[i].DBColumnType = ""
 		r.Row.Cells[i].ColumnIndex = i
 		r.Row.Cells[i].RowIndex = 0
@@ -725,4 +725,37 @@ func getRowLimiting(driverName string) RowLimiting {
 	}
 
 	return rl
+}
+
+// get query column public name
+func getAliasFromColumnName(queryColumnName string) string {
+	res := queryColumnName
+
+	// if the column name has 'AS'.
+	if pos := strings.Index(strings.ToLower(res), ` as `); pos != -1 {
+		res = strings.TrimSpace(queryColumnName[pos+3:])
+	}
+
+	// Check if it has brackets
+	posl := strings.LastIndex(res, `[`)
+	posr := strings.LastIndex(res, `]`)
+
+	if posl != -1 && posr != -1 && posr > posl {
+		pos := strings.LastIndex(res, ` `)
+
+		// If the space is within the brackets, we will get the column name out from the inside
+		if pos > posl && pos < posr {
+			res = strings.TrimSpace(res[posl+1 : posr])
+		}
+	}
+
+	// parse spaced alias
+	if posl == -1 || posr == -1 {
+		pos := strings.LastIndex(res, ` `)
+		if pos != -1 {
+			res = strings.TrimSpace(res[pos:])
+		}
+	}
+
+	return res
 }
