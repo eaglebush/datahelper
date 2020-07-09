@@ -747,6 +747,11 @@ func getAliasFromColumnName(queryColumnName string) string {
 		if pos > posl && pos < posr {
 			res = strings.TrimSpace(res[posl+1 : posr])
 		}
+
+		pos = strings.Index(res, `.`)
+		if pos != -1 {
+			res = strings.TrimSpace(res[posl+1 : posr])
+		}
 	}
 
 	// parse spaced alias

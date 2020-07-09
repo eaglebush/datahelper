@@ -23,6 +23,7 @@ func TestParsePublicColumn(t *testing.T) {
 	log.Println(getAliasFromColumnName(`tr.WhatEver AS Whenever`))
 	log.Println(getAliasFromColumnName(`ISNULL(tr.WhatEver,'.') Howeverx`))
 	log.Println(getAliasFromColumnName(`ISNULL(tr.WhatEver,'.') AS Howevery`))
+	log.Println(getAliasFromColumnName(`tr.[Status]`))
 }
 
 func TestMSSQLGetData(t *testing.T) {
