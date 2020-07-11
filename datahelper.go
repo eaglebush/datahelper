@@ -32,8 +32,8 @@ type RowLimitPlacement int
 
 // Constants
 const (
-	RowLimitingFront RowLimitPlacement = 0
-	RowLimitingRear  RowLimitPlacement = 1
+	RowLimitingFront RowLimitPlacement = 0 // The database query puts row limiting inside the SELECT clause
+	RowLimitingRear  RowLimitPlacement = 1 // The database query puts row limiting at the end of the SELECT clause
 )
 
 // RowLimiting - row limiting setup
@@ -50,8 +50,6 @@ type SingleRow struct {
 
 // NewDataHelper - creates a new DataHelper
 func NewDataHelper(config *cfg.Configuration) *DataHelper {
-	dh := &DataHelper{}
-	dh.Settings = *config
 
 	/*
 		Reserve code for autosetting of struct fields
@@ -77,7 +75,9 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 		}
 	*/
 
-	return dh
+	return &DataHelper{
+		Settings: *config,
+	}
 }
 
 // Connect - connect to the database from configuration set in the NewDataHelper constructor.
