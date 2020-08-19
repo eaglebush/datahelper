@@ -682,6 +682,25 @@ func (dh *DataHelper) Discard(PointID string) error {
 	return nil
 }
 
+// Schemize adds the schema specified in the DatabaseInfo.Schema. If the setting is blank, it will not add any. If there is a dot in the table name, it will not add any.
+func (dh *DataHelper) Schemize(tableName string) string {
+
+	if dh.CurrentDatabaseInfo.Schema != "" {
+		if posd := strings.Index(tableName, `.`); posd == -1 {
+
+			// Get reserved word escape chars
+			rwe := parseReserveWordsChars(dh.CurrentDatabaseInfo.ReservedWordEscapeChar)
+
+			if strings.Index(tableName, rwe[0]) != -1 && strings.Index(tableName, rwe[1]) != -1 {
+				return rwe[0] + dh.CurrentDatabaseInfo.Schema + rwe[1] + `.` + tableName
+			}
+			return dh.CurrentDatabaseInfo.Schema + `.` + tableName
+		}
+	}
+
+	return tableName
+}
+
 func (dh *DataHelper) replaceQueryParamMarker(preparedQuery string) string {
 	var paramchar string
 
@@ -769,4 +788,18 @@ func getAliasFromColumnName(queryColumnName string) string {
 	}
 
 	return res
+}
+
+// parseReserveWordsChars always returns two-element array of opening and closing escape chars
+func parseReserveWordsChars(ec string) []string {
+
+	if len(ec) == 1 {
+		return []string{ec, ec}
+	}
+
+	if len(ec) >= 2 {
+		return []string{ec[0:1], ec[1:2]}
+	}
+
+	return []string{`"`, `"`} // default is double quotes
 }
