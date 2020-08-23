@@ -14,16 +14,16 @@ import (
 )
 
 func TestParsePublicColumn(t *testing.T) {
-	log.Println(getAliasFromColumnName(`COUNT(*) AS CountX`))
-	log.Println(getAliasFromColumnName(`COUNT(*) CountX`))
-	log.Println(getAliasFromColumnName(`COUNT(*) Cou [ntX`))
-	log.Println(getAliasFromColumnName(`COUNT(*) AS [CountX You]`))
-	log.Println(getAliasFromColumnName(`COUNT(*) [CountX You]`))
-	log.Println(getAliasFromColumnName(`tr.WhatEver`))
-	log.Println(getAliasFromColumnName(`tr.WhatEver AS Whenever`))
-	log.Println(getAliasFromColumnName(`ISNULL(tr.WhatEver,'.') Howeverx`))
-	log.Println(getAliasFromColumnName(`ISNULL(tr.WhatEver,'.') AS Howevery`))
-	log.Println(getAliasFromColumnName(`tr.[Status]`))
+	log.Println(getAliasFromColumnName(nil, `COUNT(*) AS CountX`))
+	log.Println(getAliasFromColumnName(nil, `COUNT(*) CountX`))
+	log.Println(getAliasFromColumnName(nil, `COUNT(*) Cou [ntX`))
+	log.Println(getAliasFromColumnName(nil, `COUNT(*) AS [CountX You]`))
+	log.Println(getAliasFromColumnName(nil, `COUNT(*) [CountX You]`))
+	log.Println(getAliasFromColumnName(nil, `tr.WhatEver`))
+	log.Println(getAliasFromColumnName(nil, `tr.WhatEver AS Whenever`))
+	log.Println(getAliasFromColumnName(nil, `ISNULL(tr.WhatEver,'.') Howeverx`))
+	log.Println(getAliasFromColumnName(nil, `ISNULL(tr.WhatEver,'.') AS Howevery`))
+	log.Println(getAliasFromColumnName(nil, `tr.[Status]`))
 }
 
 func TestMSSQLGetData(t *testing.T) {
@@ -51,6 +51,29 @@ func TestMSSQLGetData(t *testing.T) {
 		}
 
 	}
+}
+
+func TestMSSQLGetDataNewConnected(t *testing.T) {
+	config, _ := cfg.LoadConfig("config.mssql.json")
+
+	db, _, err := NewConnected(nil, config)
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+	defer db.Disconnect()
+
+	dt, err := db.GetData(`SELECT user_name, display_name, ldap_login FROM useraccount WHERE user_key=@p1;`, 1)
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+	for _, r := range dt.Rows {
+		log.Printf("Code: %v\r\n", r.Value("user_name"))
+		log.Printf("Description: %v\r\n", r.Value("display_name"))
+		//log.Printf("Value: %v\r\n", r.Value("appshub_admin"))
+		log.Printf("AppsHubAdmin: %v\r\n", r.ValueBool("ldap_login"))
+		r.Close()
+	}
+
 }
 
 func TestGetRow(t *testing.T) {

@@ -80,118 +80,46 @@ func NewDataHelper(config *cfg.Configuration) *DataHelper {
 	}
 }
 
-// Connect - connect to the database from configuration set in the NewDataHelper constructor.
-func (dh *DataHelper) Connect(ConnectionID ...string) (bool, error) {
-	var err error
-	connID := ""
+// NewConnected creates a new connected datahelper.
+// The dh parameter could optionally be supplied by a valid datahelper.
+// Returns : DataHelper, InTransaction and Error
+func NewConnected(dh *DataHelper, config *cfg.Configuration, ConnectionID ...string) (*DataHelper, bool, error) {
 
+	if dh != nil {
+		return dh, dh.IsInTransaction(), nil
+	}
+
+	var (
+		err     error
+		intrans bool
+		cid     string
+	)
+
+	cid = ``
+	if len(ConnectionID) > 0 {
+		cid = ConnectionID[0]
+	}
+
+	// The first parameter is blank because it will get the default connection id from the config
+	dh, _, err = connect(nil, cid, config)
+	if err != nil {
+		intrans = dh.IsInTransaction()
+	}
+
+	return dh, intrans, err
+}
+
+// Connect - connect to the database from configuration set in the NewDataHelper constructor.
+func (dh *DataHelper) Connect(ConnectionID ...string) (connected bool, err error) {
+
+	connID := ""
 	if len(ConnectionID) > 0 {
 		connID = ConnectionID[0]
 	}
 
-	dh.ConnectionID = connID
-	if connID == "" {
-		dh.ConnectionID = dh.Settings.DefaultDatabaseID
-	}
+	dh, connected, err = connect(dh, connID, &dh.Settings)
 
-	if dh.CurrentDatabaseInfo = dh.Settings.GetDatabaseInfo(dh.ConnectionID); dh.CurrentDatabaseInfo == nil {
-		return false, errors.New("Connection Error: Connection ID does not exist")
-	}
-
-	di := dh.CurrentDatabaseInfo
-
-	dh.DriverName = di.DriverName
-	dh.RowLimitInfo = getRowLimiting(dh.DriverName)
-
-	if len(di.ConnectionString) == 0 {
-		return false, errors.New("Connection Error: Connection string is not set")
-	}
-
-	dh.connectionString = di.ConnectionString
-
-	if dh.db, err = sql.Open(di.DriverName, di.ConnectionString); err != nil {
-		return false, errors.New("Connection Error: " + err.Error())
-	}
-
-	if di.MaxOpenConnection != 0 {
-		dh.db.SetMaxOpenConns(di.MaxOpenConnection)
-	}
-
-	if di.MaxIdleConnection != 0 {
-		dh.db.SetMaxIdleConns(di.MaxIdleConnection)
-	}
-
-	if maxlt := di.MaxConnectionLifetime; maxlt != 0 {
-		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
-	}
-
-	if di.StorageType != "FILE" {
-		if di.Ping {
-			if err = dh.db.Ping(); err != nil {
-				return false, errors.New("Connection Error: " + err.Error())
-			}
-		}
-	}
-
-	/*
-		Resets errors and assumes all queries are OK.
-		AllQueryOK is primarily used in a batch of queries.
-		This will be set to false if one of the query execution fails.
-	*/
-	dh.Errors = make([]string, 0)
-	dh.AllQueryOK = true
-
-	return true, nil
-}
-
-// ConnectEx - connect via specified driver name and connection string
-func (dh *DataHelper) ConnectEx(DriverName string, ConnectionString string, Ping bool) (bool, error) {
-	var err error
-
-	if len(DriverName) == 0 {
-		return false, errors.New("Connection Error: DriverName is not set")
-	}
-
-	if len(ConnectionString) == 0 {
-		return false, errors.New("Connection Error: Connection string is not set")
-	}
-
-	if dh.db, err = sql.Open(DriverName, ConnectionString); err != nil {
-		return false, errors.New("Connection Error: " + err.Error())
-	}
-
-	dh.DriverName = DriverName
-	dh.RowLimitInfo = getRowLimiting(dh.DriverName)
-
-	di := dh.CurrentDatabaseInfo
-
-	if di.MaxOpenConnection != 0 {
-		dh.db.SetMaxOpenConns(di.MaxOpenConnection)
-	}
-
-	if di.MaxIdleConnection != 0 {
-		dh.db.SetMaxIdleConns(di.MaxIdleConnection)
-	}
-
-	if maxlt := di.MaxConnectionLifetime; maxlt != 0 {
-		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
-	}
-
-	if Ping {
-		if err = dh.db.Ping(); err != nil {
-			return false, errors.New("Connection Error: " + err.Error())
-		}
-	}
-
-	/*
-		Resets errors and assumes all queries are OK.
-		AllQueryOK is primarily used in a batch of queries.
-		This will be set to false if one of the query execution fails.
-	*/
-	dh.Errors = make([]string, 0)
-	dh.AllQueryOK = true
-
-	return true, nil
+	return
 }
 
 // GetRow - get a single row result from a query
@@ -261,7 +189,7 @@ func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, a
 
 	for i := 0; i < lencols; i++ {
 
-		r.Row.Cells[i].ColumnName = getAliasFromColumnName(columns[i])
+		r.Row.Cells[i].ColumnName = getAliasFromColumnName(dh.CurrentDatabaseInfo, columns[i])
 		r.Row.Cells[i].DBColumnType = ""
 		r.Row.Cells[i].ColumnIndex = i
 		r.Row.Cells[i].RowIndex = 0
@@ -388,7 +316,12 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 }
 
 // Begin - begins a new transaction
-func (dh *DataHelper) Begin() (*sql.Tx, error) {
+func (dh *DataHelper) Begin(intrans ...bool) (*sql.Tx, error) {
+
+	if len(intrans) > 0 {
+		return nil, errors.New(`DataHelper does not allow a new transaction`)
+	}
+
 	var tx *sql.Tx
 	var err error
 
@@ -435,7 +368,12 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 }
 
 // Commit - commits a transaction
-func (dh *DataHelper) Commit() error {
+func (dh *DataHelper) Commit(intrans ...bool) error {
+
+	if len(intrans) > 0 {
+		return errors.New(`DataHelper does not allow to commit a parent transaction`)
+	}
+
 	if dh.tx == nil {
 		return errors.New("No transaction was initiated")
 	}
@@ -451,7 +389,12 @@ func (dh *DataHelper) Commit() error {
 }
 
 // Rollback - rollbacks a transaction
-func (dh *DataHelper) Rollback() error {
+func (dh *DataHelper) Rollback(intrans ...bool) error {
+
+	if len(intrans) > 0 {
+		return errors.New(`DataHelper does not allow to rollback a parent transaction`)
+	}
+
 	if dh.tx == nil {
 		return errors.New("No transaction was initiated")
 	}
@@ -685,16 +628,22 @@ func (dh *DataHelper) Discard(PointID string) error {
 // Schemize adds the schema specified in the DatabaseInfo.Schema. If the setting is blank, it will not add any. If there is a dot in the table name, it will not add any.
 func (dh *DataHelper) Schemize(tableName string) string {
 
-	if dh.CurrentDatabaseInfo.Schema != "" {
+	di := dh.CurrentDatabaseInfo
+
+	if di == nil {
+		return tableName
+	}
+
+	if di.Schema != "" {
 		if posd := strings.Index(tableName, `.`); posd == -1 {
 
 			// Get reserved word escape chars
-			rwe := parseReserveWordsChars(dh.CurrentDatabaseInfo.ReservedWordEscapeChar)
+			rwe := parseReserveWordsChars(di.ReservedWordEscapeChar)
 
 			if strings.Index(tableName, rwe[0]) != -1 && strings.Index(tableName, rwe[1]) != -1 {
-				return rwe[0] + dh.CurrentDatabaseInfo.Schema + rwe[1] + `.` + tableName
+				return rwe[0] + di.Schema + rwe[1] + `.` + tableName
 			}
-			return dh.CurrentDatabaseInfo.Schema + `.` + tableName
+			return di.Schema + `.` + tableName
 		}
 	}
 
@@ -747,7 +696,7 @@ func getRowLimiting(driverName string) RowLimiting {
 }
 
 // get query column public name
-func getAliasFromColumnName(queryColumnName string) string {
+func getAliasFromColumnName(di *cfg.DatabaseInfo, queryColumnName string) string {
 	res := queryColumnName
 
 	// if the column name has 'AS'.
@@ -755,9 +704,14 @@ func getAliasFromColumnName(queryColumnName string) string {
 		res = strings.TrimSpace(queryColumnName[pos+3:])
 	}
 
+	rwe := parseReserveWordsChars(``)
+	if di != nil {
+		rwe = parseReserveWordsChars(di.ReservedWordEscapeChar)
+	}
+
 	// Check if it has brackets
-	posl := strings.LastIndex(res, `[`)
-	posr := strings.LastIndex(res, `]`)
+	posl := strings.LastIndex(res, rwe[0])
+	posr := strings.LastIndex(res, rwe[1])
 
 	if posl != -1 && posr != -1 && posr > posl {
 		pos := strings.LastIndex(res, ` `)
@@ -802,4 +756,75 @@ func parseReserveWordsChars(ec string) []string {
 	}
 
 	return []string{`"`, `"`} // default is double quotes
+}
+
+func connect(prevdh *DataHelper, connectid string, config *cfg.Configuration) (dh *DataHelper, connected bool, err error) {
+
+	dh = prevdh
+	if prevdh == nil {
+		dh = &DataHelper{
+			Settings: *config,
+		}
+	}
+
+	dh.ConnectionID = connectid
+	if dh.ConnectionID == "" {
+		dh.ConnectionID = dh.Settings.DefaultDatabaseID
+	}
+
+	if dh.CurrentDatabaseInfo = config.GetDatabaseInfo(dh.ConnectionID); dh.CurrentDatabaseInfo == nil {
+		dh = nil
+		err = errors.New("Connection ID does not exist")
+		return
+	}
+
+	di := dh.CurrentDatabaseInfo
+
+	dh.DriverName = di.DriverName
+	dh.RowLimitInfo = getRowLimiting(dh.DriverName)
+
+	if len(di.ConnectionString) == 0 {
+		dh = nil
+		err = errors.New("Connection string is not set")
+		return
+	}
+
+	dh.connectionString = di.ConnectionString
+
+	if dh.db, err = sql.Open(di.DriverName, di.ConnectionString); err != nil {
+		dh = nil
+		return
+	}
+
+	if di.MaxOpenConnection != 0 {
+		dh.db.SetMaxOpenConns(di.MaxOpenConnection)
+	}
+
+	if di.MaxIdleConnection != 0 {
+		dh.db.SetMaxIdleConns(di.MaxIdleConnection)
+	}
+
+	if maxlt := di.MaxConnectionLifetime; maxlt != 0 {
+		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
+	}
+
+	if di.StorageType != "FILE" {
+		if di.Ping {
+			if err = dh.db.Ping(); err != nil {
+				dh = nil
+				return
+			}
+		}
+	}
+
+	/*
+		Resets errors and assumes all queries are OK.
+		AllQueryOK is primarily used in a batch of queries.
+		This will be set to false if one of the query execution fails.
+	*/
+	dh.Errors = make([]string, 0)
+	dh.AllQueryOK = true
+	connected = true
+
+	return
 }
