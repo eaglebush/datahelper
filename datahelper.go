@@ -319,7 +319,9 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 func (dh *DataHelper) Begin(intrans ...bool) (*sql.Tx, error) {
 
 	if len(intrans) > 0 {
-		return nil, errors.New(`DataHelper does not allow a new transaction`)
+		if intrans[0] {
+			return nil, errors.New(`DataHelper does not allow a new transaction`)
+		}
 	}
 
 	var tx *sql.Tx
@@ -371,7 +373,9 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 func (dh *DataHelper) Commit(intrans ...bool) error {
 
 	if len(intrans) > 0 {
-		return errors.New(`DataHelper does not allow to commit a parent transaction`)
+		if intrans[0] {
+			return errors.New(`DataHelper does not allow to commit a parent transaction`)
+		}
 	}
 
 	if dh.tx == nil {
@@ -392,7 +396,9 @@ func (dh *DataHelper) Commit(intrans ...bool) error {
 func (dh *DataHelper) Rollback(intrans ...bool) error {
 
 	if len(intrans) > 0 {
-		return errors.New(`DataHelper does not allow to rollback a parent transaction`)
+		if intrans[0] {
+			return errors.New(`DataHelper does not allow to rollback a parent transaction`)
+		}
 	}
 
 	if dh.tx == nil {
