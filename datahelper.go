@@ -154,6 +154,14 @@ func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, a
 	query += " FROM "
 	query += dh.replaceQueryParamMarker(tableNameWithParameters)
 
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	query = re.ReplaceAllString(query, sch+`$1`)
+
 	if dh.tx != nil {
 		row = dh.tx.QueryRow(query, args...)
 	} else {
@@ -220,6 +228,14 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 	colsadded := false
 
 	query := dh.replaceQueryParamMarker(preparedQuery)
+
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	query = re.ReplaceAllString(query, sch+`$1`)
 
 	if dh.tx != nil {
 		rows, err = dh.tx.Query(query, arg...)
@@ -293,6 +309,14 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	query = re.ReplaceAllString(query, sch+`$1`)
+
 	if dh.tx != nil {
 
 		if result, err = dh.tx.Exec(query, arg...); err != nil {
@@ -345,6 +369,14 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 	var err error
 
 	query := dh.replaceQueryParamMarker(preparedQuery)
+
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	query = re.ReplaceAllString(query, sch+`$1`)
 
 	if dh.tx != nil {
 		rows, err = dh.tx.Query(query, arg...)
@@ -417,6 +449,15 @@ func (dh *DataHelper) Rollback(intrans ...bool) error {
 func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	query = re.ReplaceAllString(query, sch+`$1`)
+
 	if dh.tx != nil {
 		return dh.tx.Prepare(query)
 	}
@@ -471,6 +512,16 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 	upsertq := strings.Replace(si.UpsertQuery, si.NamePlaceHolder, SequenceKey, -1)
 	resultq := strings.Replace(si.ResultQuery, si.NamePlaceHolder, SequenceKey, -1)
 
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	upsertq = re.ReplaceAllString(upsertq, sch+`$1`)
+	resultq = re.ReplaceAllString(resultq, sch+`$1`)
+
 	/* Update generator */
 	if _, err = dh.Exec(upsertq); err != nil {
 		return "", err
@@ -518,6 +569,14 @@ func (dh *DataHelper) Exists(tableNameWithParameters string, args ...interface{}
 
 	query += sel + " FROM "
 	query += dh.replaceQueryParamMarker(tableNameWithParameters)
+
+	// replace table names marked with {table}
+	sch := dh.CurrentDatabaseInfo.Schema
+	if sch != "" {
+		sch = sch + `.`
+	}
+	re := regexp.MustCompile(`\{(\w*)\}`)
+	query = re.ReplaceAllString(query, sch+`$1`)
 
 	if dh.tx != nil {
 		row = dh.tx.QueryRow(query, args...)
