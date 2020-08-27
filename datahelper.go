@@ -13,6 +13,17 @@ import (
 	//"eaglebush/datatable"
 )
 
+// ReadType - read types in data retrieval
+type ReadType string
+
+// ReadTypes for data access
+const (
+	READALL     ReadType = `all`
+	READBYKEY   ReadType = `key`
+	READBYCODE  ReadType = `code`
+	READFORFORM ReadType = `form`
+)
+
 // DataHelper struct
 type DataHelper struct {
 	db                  *sql.DB
