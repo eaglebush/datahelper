@@ -102,7 +102,7 @@ func NewConnected(dh *DataHelper, config *cfg.Configuration, ConnectionID ...str
 
 	// The first parameter is blank because it will get the default connection id from the config
 	dh, _, err = connect(nil, cid, config)
-	if err != nil {
+	if err == nil && dh != nil {
 		intrans = dh.IsInTransaction()
 	}
 
