@@ -701,31 +701,6 @@ func (dh *DataHelper) Discard(PointID string) error {
 	return nil
 }
 
-// Schemize adds the schema specified in the DatabaseInfo.Schema. If the setting is blank, it will not add any. If there is a dot in the table name, it will not add any.
-func (dh *DataHelper) Schemize(tableName string) string {
-
-	di := dh.CurrentDatabaseInfo
-
-	if di == nil {
-		return tableName
-	}
-
-	if di.Schema != "" {
-		if posd := strings.Index(tableName, `.`); posd == -1 {
-
-			// Get reserved word escape chars
-			rwe := parseReserveWordsChars(di.ReservedWordEscapeChar)
-
-			if strings.Index(tableName, rwe[0]) != -1 && strings.Index(tableName, rwe[1]) != -1 {
-				return rwe[0] + di.Schema + rwe[1] + `.` + tableName
-			}
-			return di.Schema + `.` + tableName
-		}
-	}
-
-	return tableName
-}
-
 func (dh *DataHelper) replaceQueryParamMarker(preparedQuery string) string {
 	var paramchar string
 
