@@ -415,9 +415,11 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 // Commit - commits a transaction
 func (dh *DataHelper) Commit(intrans ...bool) error {
 
+	hasparenttr := false
 	if len(intrans) > 0 {
-		if intrans[0] {
-			return errors.New(`DataHelper does not allow to commit a parent transaction`)
+		hasparenttr = intrans[0]
+		if hasparenttr {
+			return errors.New(`DataHelper does not allow to rollback a parent transaction`)
 		}
 	}
 
@@ -429,7 +431,9 @@ func (dh *DataHelper) Commit(intrans ...bool) error {
 	dh.AllQueryOK = true
 	dh.Errors = make([]string, 0)
 	defer func() {
-		dh.tx = nil
+		if !hasparenttr {
+			dh.tx = nil
+		}
 	}()
 
 	return dh.tx.Commit()
@@ -438,8 +442,10 @@ func (dh *DataHelper) Commit(intrans ...bool) error {
 // Rollback - rollbacks a transaction
 func (dh *DataHelper) Rollback(intrans ...bool) error {
 
+	hasparenttr := false
 	if len(intrans) > 0 {
-		if intrans[0] {
+		hasparenttr = intrans[0]
+		if hasparenttr {
 			return errors.New(`DataHelper does not allow to rollback a parent transaction`)
 		}
 	}
@@ -451,7 +457,9 @@ func (dh *DataHelper) Rollback(intrans ...bool) error {
 	dh.AllQueryOK = true
 	dh.Errors = make([]string, 0)
 	defer func() {
-		dh.tx = nil
+		if !hasparenttr {
+			dh.tx = nil
+		}
 	}()
 	return dh.tx.Rollback()
 }
