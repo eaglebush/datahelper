@@ -166,12 +166,7 @@ func (dh *DataHelper) GetRow(columns []string, tableNameWithParameters string, a
 	query += dh.replaceQueryParamMarker(tableNameWithParameters)
 
 	// replace table names marked with {table}
-	sch := dh.CurrentDatabaseInfo.Schema
-	if sch != "" {
-		sch = sch + `.`
-	}
-	re := regexp.MustCompile(`\{(\w*)\}`)
-	query = re.ReplaceAllString(query, sch+`$1`)
+	query = replaceCustomPlaceHolder(query, dh.CurrentDatabaseInfo.Schema)
 
 	if dh.tx != nil {
 		row = dh.tx.QueryRow(query, args...)
@@ -241,12 +236,7 @@ func (dh *DataHelper) GetData(preparedQuery string, arg ...interface{}) (*datata
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
 	// replace table names marked with {table}
-	sch := dh.CurrentDatabaseInfo.Schema
-	if sch != "" {
-		sch = sch + `.`
-	}
-	re := regexp.MustCompile(`\{(\w*)\}`)
-	query = re.ReplaceAllString(query, sch+`$1`)
+	query = replaceCustomPlaceHolder(query, dh.CurrentDatabaseInfo.Schema)
 
 	if dh.tx != nil {
 		rows, err = dh.tx.Query(query, arg...)
@@ -321,12 +311,7 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
 	// replace table names marked with {table}
-	sch := dh.CurrentDatabaseInfo.Schema
-	if sch != "" {
-		sch = sch + `.`
-	}
-	re := regexp.MustCompile(`\{(\w*)\}`)
-	query = re.ReplaceAllString(query, sch+`$1`)
+	query = replaceCustomPlaceHolder(query, dh.CurrentDatabaseInfo.Schema)
 
 	if dh.tx != nil {
 
@@ -378,14 +363,8 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 	var err error
 
 	query := dh.replaceQueryParamMarker(preparedQuery)
-
 	// replace table names marked with {table}
-	sch := dh.CurrentDatabaseInfo.Schema
-	if sch != "" {
-		sch = sch + `.`
-	}
-	re := regexp.MustCompile(`\{(\w*)\}`)
-	query = re.ReplaceAllString(query, sch+`$1`)
+	query = replaceCustomPlaceHolder(query, dh.CurrentDatabaseInfo.Schema)
 
 	if dh.tx != nil {
 		rows, err = dh.tx.Query(query, arg...)
@@ -461,13 +440,7 @@ func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
 	query := dh.replaceQueryParamMarker(preparedQuery)
 
 	// replace table names marked with {table}
-	sch := dh.CurrentDatabaseInfo.Schema
-	if sch != "" {
-		sch = sch + `.`
-	}
-
-	re := regexp.MustCompile(`\{(\w*)\}`)
-	query = re.ReplaceAllString(query, sch+`$1`)
+	query = replaceCustomPlaceHolder(query, dh.CurrentDatabaseInfo.Schema)
 
 	if dh.tx != nil {
 		return dh.tx.Prepare(query)
@@ -583,12 +556,7 @@ func (dh *DataHelper) Exists(tableNameWithParameters string, args ...interface{}
 	query += dh.replaceQueryParamMarker(tableNameWithParameters)
 
 	// replace table names marked with {table}
-	sch := dh.CurrentDatabaseInfo.Schema
-	if sch != "" {
-		sch = sch + `.`
-	}
-	re := regexp.MustCompile(`\{(\w*)\}`)
-	query = re.ReplaceAllString(query, sch+`$1`)
+	query = replaceCustomPlaceHolder(query, dh.CurrentDatabaseInfo.Schema)
 
 	if dh.tx != nil {
 		row = dh.tx.QueryRow(query, args...)
@@ -879,4 +847,15 @@ func connect(prevdh *DataHelper, connectid string, config *cfg.Configuration) (d
 	connected = true
 
 	return
+}
+
+func replaceCustomPlaceHolder(sql string, schema string) string {
+	if schema != "" {
+		schema = schema + `.`
+	}
+
+	re := regexp.MustCompile(`\{([a-zA-Z0-9\[\]\"]*)\}`)
+	sql = re.ReplaceAllString(sql, schema+`$1`)
+
+	return sql
 }

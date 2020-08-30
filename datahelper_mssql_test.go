@@ -274,3 +274,11 @@ func TestReplaceParamChar(testing *testing.T) {
 
 	log.Println(db.replaceQueryParamMarker(`INSERT INTO Table (col1, col2, col3, ? AS Alias) VALUES (?,?,?);`))
 }
+
+func TestCustomPlaceHolder(t *testing.T) {
+	sql := `SELECT * FROM {table1} a INNER JOIN {[tran123a]} b ON a.tran_key = b.tran_key`
+	log.Println(sql)
+
+	sql = replaceCustomPlaceHolder(sql, `sch`)
+	log.Println(sql)
+}

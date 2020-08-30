@@ -12,6 +12,7 @@
     "Databases" : [
         {
             "ID" : "DEFAULT",
+            "Schema": "pub",
             "ConnectionString" : "sqlserver://appshub:fantastic4@KASSGRAPHICS?database=APPSHUB&connection+timeout=0&encrypt=disable",
             "DriverName" : "sqlserver",
             "StorageType": "SERVER",
@@ -22,7 +23,8 @@
                 "NamePlaceHolder": "{SequenceName}"
             },
             "ParameterPlaceHolder": "@p",
-            "ParameterInSequence": true
+            "ParameterInSequence": true,
+            "ReservedWordEscapeChar":"[]"
         },
         {
             "ID" : "LOCAL",
@@ -52,7 +54,7 @@
             "ParameterPlaceHolder": "@p",
             "ParameterInSequence": true
         }
-    ],   
+    ],
     "Domains": [
         {
             "Name":"VDIMDCI",
@@ -70,6 +72,6 @@
             "FullName":"Test User",
             "EmailAddress":"testuser@yahoo.com",
             "MessengerName" : "test"
-        }        
+        }
     ]
 }
