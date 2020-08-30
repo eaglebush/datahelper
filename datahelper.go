@@ -427,16 +427,16 @@ func (dh *DataHelper) Commit(intrans ...bool) error {
 		return errors.New("No transaction was initiated")
 	}
 
+	var err error
+
 	//The following properties are always reset after commit
 	dh.AllQueryOK = true
 	dh.Errors = make([]string, 0)
-	defer func() {
-		if !hasparenttr {
-			dh.tx = nil
-		}
-	}()
+	if err = dh.tx.Commit(); err == nil {
+		dh.tx = nil
+	}
 
-	return dh.tx.Commit()
+	return err
 }
 
 // Rollback - rollbacks a transaction
@@ -453,15 +453,17 @@ func (dh *DataHelper) Rollback(intrans ...bool) error {
 	if dh.tx == nil {
 		return errors.New("No transaction was initiated")
 	}
+
+	var err error
+
 	//The following properties are always reset after rollback
 	dh.AllQueryOK = true
 	dh.Errors = make([]string, 0)
-	defer func() {
-		if !hasparenttr {
-			dh.tx = nil
-		}
-	}()
-	return dh.tx.Rollback()
+	if err = dh.tx.Rollback(); err == nil {
+		dh.tx = nil
+	}
+
+	return err
 }
 
 // Prepare - prepare a statement
