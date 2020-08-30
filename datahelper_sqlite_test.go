@@ -28,12 +28,12 @@ func TestGetData(t *testing.T) {
 		log.Printf("Error: %v", err)
 	}
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		UserKey := 2
 		dt, err := db.GetData(`SELECT
-								UserName, Active, AppsHubAdmin, 
+								UserName, Active, AppsHubAdmin,
 								DateLastLoggedIn, DisplayName, EmailAddress,
-								ForgotPasswordGUID, GMT, GUID, LDAPLogin, 
+								ForgotPasswordGUID, GMT, GUID, LDAPLogin,
 								MobileNo, ProfileImageURL, ActivationCode, ActivationStatus
 						   FROM USERACCOUNT WHERE UserKey = ?`, UserKey)
 		if err != nil {
@@ -68,12 +68,12 @@ func TestGetDataSetValue(t *testing.T) {
 
 	connected, _ := db.Connect("")
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		UserKey := 2
 		dt, err := db.GetData(`SELECT
-								UserName, Active, AppsHubAdmin, 
+								UserName, Active, AppsHubAdmin,
 								DateLastLoggedIn, DisplayName, EmailAddress,
-								ForgotPasswordGUID, GMT, GUID, LDAPLogin, 
+								ForgotPasswordGUID, GMT, GUID, LDAPLogin,
 								MobileNo, ProfileImageURL, ActivationCode, ActivationStatus
 						   FROM USERACCOUNT WHERE UserKey = ?`, UserKey)
 		if err == nil {
@@ -128,7 +128,7 @@ func TestExec(t *testing.T) {
 	db := NewDataHelper(config)
 	connected, _ := db.Connect("")
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		r, err := db.Exec(`UPDATE tshUser SET ProfileImageURL=? WHERE UserKey=?`, `http://www.yahoo.com`, 2)
 		if err != nil {
 			log.Printf("Error: " + err.Error())
@@ -144,16 +144,16 @@ func TestTransactionExec(t *testing.T) {
 	db := NewDataHelper(config)
 	connected, _ := db.Connect("")
 	if connected {
-		defer db.Disconnect()
-		db.Begin()
+		defer db.Disconnect(false)
+		db.Begin(false)
 
 		r, err := db.Exec(`UPDATE tshUser SET ProfileImageURL=? WHERE UserKey=?`, `http://www.yahoo.com`, 2)
 		if db.AllQueryOK {
 			affected, _ := r.RowsAffected()
-			db.Commit()
+			db.Commit(false)
 			log.Printf("Result: %v", affected)
 		} else {
-			db.Rollback()
+			db.Rollback(false)
 			log.Printf("Error: " + err.Error())
 		}
 	}
@@ -167,15 +167,15 @@ func TestGetSequenceX(t *testing.T) {
 		log.Printf("RErroresult: %v", err.Error())
 	}
 	if connected {
-		defer db.Disconnect()
-		db.Begin()
+		defer db.Disconnect(false)
+		db.Begin(false)
 
 		key, err := db.GetSequence("USERACCOUNT")
 		if db.AllQueryOK {
-			db.Commit()
+			db.Commit(false)
 			log.Printf("Result: %v", key)
 		} else {
-			db.Rollback()
+			db.Rollback(false)
 			log.Printf("Error: " + err.Error())
 		}
 	}

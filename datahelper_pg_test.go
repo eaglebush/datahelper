@@ -24,7 +24,7 @@ func TestPostgresGetData(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		dt, err := db.GetData(`SELECT code, description, value  FROM public.config;`)
 		if err != nil {
 			log.Printf("Error: %v", err)

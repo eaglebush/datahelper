@@ -37,7 +37,7 @@ func TestMSSQLGetData(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		dt, err := db.GetData(`SELECT user_name, display_name, ldap_login FROM useraccount WHERE user_key=@p1;`, 1)
 		if err != nil {
 			log.Printf("Error: %v", err)
@@ -60,7 +60,7 @@ func TestMSSQLGetDataNewConnected(t *testing.T) {
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	defer db.Disconnect()
+	defer db.Disconnect(false)
 
 	dt, err := db.GetData(`SELECT user_name, display_name, ldap_login FROM useraccount WHERE user_key=@p1;`, 1)
 	if err != nil {
@@ -87,7 +87,7 @@ func TestGetRow(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		//sr, err := db.GetRow([]string{`COUNT(*)`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
 		//sr, err := db.GetRow([]string{`COUNT(*) AS CountX`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
 		sr, err := db.GetRow([]string{`COUNT(*) AS [CountX You]`}, `applicationdomain WHERE application_key=? AND domain_key=?`, `3`, `1`)
@@ -114,7 +114,7 @@ func TestExists(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 
 		// db.RowLimitInfo.Keyword = "LIMIT"
 		// db.RowLimitInfo.Placement = RowLimitingRear
@@ -140,7 +140,7 @@ func TestSequence(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		key, err := db.GetSequence("Test")
 		if err != nil {
 			log.Printf("Error: %v", err)
@@ -160,7 +160,7 @@ func TestMSSQLGetRowWithWrongParameterTypes(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 		sr, err := db.GetRow([]string{`COUNT(*)`}, `tcoTraderAddressClass WHERE TraderTypeID=? AND TraderAddrClassID=? AND TraderAddrClassKey<>?`, `CUSTOMER`, `CLASS1`, `1`)
 		if err != nil {
 			log.Printf("Error: %v", err)
@@ -184,7 +184,7 @@ func TestOutParameter(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 
 		var NewNumber int
 		NewNumber = 9
@@ -207,9 +207,9 @@ func TestMSSQLNestedTransactions(t *testing.T) {
 	}
 
 	if connected {
-		defer db.Disconnect()
+		defer db.Disconnect(false)
 
-		db.Begin()
+		db.Begin(false)
 
 		db.Exec(`INSERT INTO tshGenericLookUp (LookupTag, LookupValue, Ordinal, UserFld1, UserFld2, UserFld3) VALUES ('TestTag1','TestValue1',1,'U1', 'U2', 'U3');`)
 		db.Exec(`INSERT INTO tshGenericLookUp (LookupTag, LookupValue, Ordinal, UserFld1, UserFld2, UserFld3) VALUES ('TestTag2','TestValue2',2,'U1', 'U2', 'U3');`)
@@ -256,7 +256,7 @@ func TestMSSQLNestedTransactions(t *testing.T) {
 
 		//db.Exec("DELETE FROM tshGenericLookup")
 
-		db.Commit()
+		db.Commit(false)
 	}
 }
 
@@ -268,7 +268,7 @@ func TestReplaceParamChar(testing *testing.T) {
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	defer db.Disconnect()
+	defer db.Disconnect(false)
 	db.CurrentDatabaseInfo.ParameterInSequence = true
 	db.CurrentDatabaseInfo.ParameterPlaceholder = `@p`
 
