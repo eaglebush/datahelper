@@ -351,12 +351,10 @@ func (dh *DataHelper) Exec(preparedQuery string, arg ...interface{}) (sql.Result
 }
 
 // Begin - begins a new transaction
-func (dh *DataHelper) Begin(intrans ...bool) (*sql.Tx, error) {
+func (dh *DataHelper) Begin(intr bool) (*sql.Tx, error) {
 
-	if len(intrans) > 0 {
-		if intrans[0] {
-			return nil, errors.New(`DataHelper does not allow a new transaction`)
-		}
+	if intr {
+		return nil, errors.New(`DataHelper does not allow a new transaction`)
 	}
 
 	var tx *sql.Tx
@@ -413,14 +411,10 @@ func (dh *DataHelper) GetDataReader(preparedQuery string, arg ...interface{}) (d
 }
 
 // Commit - commits a transaction
-func (dh *DataHelper) Commit(intrans ...bool) error {
+func (dh *DataHelper) Commit(intr bool) error {
 
-	hasparenttr := false
-	if len(intrans) > 0 {
-		hasparenttr = intrans[0]
-		if hasparenttr {
-			return errors.New(`DataHelper does not allow to rollback a parent transaction`)
-		}
+	if intr {
+		return errors.New(`DataHelper does not allow to rollback a parent transaction`)
 	}
 
 	if dh.tx == nil {
@@ -440,14 +434,10 @@ func (dh *DataHelper) Commit(intrans ...bool) error {
 }
 
 // Rollback - rollbacks a transaction
-func (dh *DataHelper) Rollback(intrans ...bool) error {
+func (dh *DataHelper) Rollback(intr bool) error {
 
-	hasparenttr := false
-	if len(intrans) > 0 {
-		hasparenttr = intrans[0]
-		if hasparenttr {
-			return errors.New(`DataHelper does not allow to rollback a parent transaction`)
-		}
+	if intr {
+		return errors.New(`DataHelper does not allow to rollback a parent transaction`)
 	}
 
 	if dh.tx == nil {
@@ -491,15 +481,16 @@ func (dh *DataHelper) Prepare(preparedQuery string) (*sql.Stmt, error) {
 }
 
 // Disconnect - disconnect from the database
-func (dh *DataHelper) Disconnect() error {
-	defer func() { dh.db = nil }()
+func (dh *DataHelper) Disconnect(intr bool) error {
+
+	if intr {
+		return errors.New(`DataHelper does not disconnect a parent connection`)
+	}
 
 	dh.tx = nil
-
 	if dh.db == nil {
 		return nil
 	}
-
 	return dh.db.Close()
 }
 
