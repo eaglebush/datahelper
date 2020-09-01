@@ -854,7 +854,7 @@ func replaceCustomPlaceHolder(sql string, schema string) string {
 		schema = schema + `.`
 	}
 
-	re := regexp.MustCompile(`\{([a-zA-Z0-9\[\]\"]*)\}`)
+	re := regexp.MustCompile(`\{([a-zA-Z0-9\[\]\"\_\-]*)\}`)
 	sql = re.ReplaceAllString(sql, schema+`$1`)
 
 	return sql

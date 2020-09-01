@@ -276,7 +276,7 @@ func TestReplaceParamChar(testing *testing.T) {
 }
 
 func TestCustomPlaceHolder(t *testing.T) {
-	sql := `SELECT * FROM {table1} a INNER JOIN {[tran123a]} b ON a.tran_key = b.tran_key`
+	sql := `SELECT * FROM {table1} a INNER JOIN {[tran_123-a]} b ON a.tran_key = b.tran_key`
 	log.Println(sql)
 
 	sql = replaceCustomPlaceHolder(sql, `sch`)
