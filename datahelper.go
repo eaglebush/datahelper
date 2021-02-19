@@ -484,7 +484,11 @@ func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
 
 	conninfo := dh.Settings.GetDatabaseInfo(dh.ConnectionID)
 
-	si := &conninfo.SequenceGenerator
+	si := conninfo.SequenceGenerator
+
+	if si == nil {
+		return "", errors.New("No sequence generator queries were defined")
+	}
 
 	if len(si.UpsertQuery) == 0 && len(si.ResultQuery) == 0 {
 		return "", errors.New("Sequence upsert or result query was not configured")
@@ -624,10 +628,10 @@ func (dh *DataHelper) Mark(PointID string) error {
 
 	// Get keyword from the config
 	kw := `SAVE TRANSACTION`
-	if km := dh.CurrentDatabaseInfo.KeywordMap; len(km) > 0 {
-		for i := range km {
-			if strings.ToLower(km[i].Key) == `savepoint_start` {
-				kw = km[i].Value
+	if km := dh.CurrentDatabaseInfo.KeywordMap; km != nil && len(*km) > 0 {
+		for _, kv := range *km {
+			if strings.ToLower(kv.Key) == `savepoint_start` {
+				kw = kv.Value
 				break
 			}
 		}
@@ -653,10 +657,10 @@ func (dh *DataHelper) Discard(PointID string) error {
 
 	// Get keyword from the config
 	kw := `ROLLBACK TRANSACTION`
-	if km := dh.CurrentDatabaseInfo.KeywordMap; len(km) > 0 {
-		for i := range km {
-			if strings.ToLower(km[i].Key) == `savepoint_release` {
-				kw = km[i].Value
+	if km := dh.CurrentDatabaseInfo.KeywordMap; km != nil && len(*km) > 0 {
+		for _, kv := range *km {
+			if strings.ToLower(kv.Key) == `savepoint_release` {
+				kw = kv.Value
 				break
 			}
 		}
@@ -725,8 +729,8 @@ func getAliasFromColumnName(di *cfg.DatabaseInfo, queryColumnName string) string
 	}
 
 	rwe := parseReserveWordsChars(``)
-	if di != nil {
-		rwe = parseReserveWordsChars(di.ReservedWordEscapeChar)
+	if di != nil && (di.ReservedWordEscapeChar != nil && *di.ReservedWordEscapeChar != "") {
+		rwe = parseReserveWordsChars(*di.ReservedWordEscapeChar)
 	}
 
 	// Check if it has brackets
@@ -816,20 +820,20 @@ func connect(prevdh *DataHelper, connectid string, config *cfg.Configuration) (d
 		return
 	}
 
-	if di.MaxOpenConnection != 0 {
-		dh.db.SetMaxOpenConns(di.MaxOpenConnection)
+	if di.MaxOpenConnection != nil && *di.MaxOpenConnection != 0 {
+		dh.db.SetMaxOpenConns(*di.MaxOpenConnection)
 	}
 
-	if di.MaxIdleConnection != 0 {
-		dh.db.SetMaxIdleConns(di.MaxIdleConnection)
+	if di.MaxIdleConnection != nil && *di.MaxIdleConnection != 0 {
+		dh.db.SetMaxIdleConns(*di.MaxIdleConnection)
 	}
 
-	if maxlt := di.MaxConnectionLifetime; maxlt != 0 {
-		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(maxlt))
+	if maxlt := di.MaxConnectionLifetime; maxlt != nil && *maxlt != 0 {
+		dh.db.SetConnMaxLifetime(time.Hour * time.Duration(*maxlt))
 	}
 
 	if di.StorageType != "FILE" {
-		if di.Ping {
+		if di.Ping != nil && *di.Ping {
 			if err = dh.db.Ping(); err != nil {
 				dh = nil
 				return
