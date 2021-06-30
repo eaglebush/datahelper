@@ -474,12 +474,15 @@ func (dh *DataHelper) IsInTransaction() bool {
 
 // GetSequence - get the next sequence based on the sequence key
 func (dh *DataHelper) GetSequence(SequenceKey string) (string, error) {
-	var err error
-	//var sr SingleRow
-	var dt *datatable.DataTable
 
+	var (
+		err error
+		dt  *datatable.DataTable
+	)
+
+	//var sr SingleRow
 	if dh.ConnectionID == "" {
-		dh.ConnectionID = dh.Settings.DefaultDatabaseID
+		dh.ConnectionID = *dh.Settings.DefaultDatabaseID
 	}
 
 	conninfo := dh.Settings.GetDatabaseInfo(dh.ConnectionID)
@@ -793,7 +796,7 @@ func connect(prevdh *DataHelper, connectid string, config *cfg.Configuration) (d
 
 	dh.ConnectionID = connectid
 	if dh.ConnectionID == "" {
-		dh.ConnectionID = dh.Settings.DefaultDatabaseID
+		dh.ConnectionID = *dh.Settings.DefaultDatabaseID
 	}
 
 	if dh.CurrentDatabaseInfo = config.GetDatabaseInfo(dh.ConnectionID); dh.CurrentDatabaseInfo == nil {

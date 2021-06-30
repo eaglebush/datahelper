@@ -54,6 +54,7 @@ func TestMSSQLGetData(t *testing.T) {
 }
 
 func TestMSSQLGetDataNewConnected(t *testing.T) {
+
 	config, _ := cfg.LoadConfig("config.mssql.json")
 
 	db, _, err := NewConnected(nil, config)
