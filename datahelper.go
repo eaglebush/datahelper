@@ -634,7 +634,7 @@ func (dh *DataHelper) Mark(PointID string) error {
 	if km := dh.CurrentDatabaseInfo.KeywordMap; km != nil && len(*km) > 0 {
 		for _, kv := range *km {
 			if strings.ToLower(kv.Key) == `savepoint_start` {
-				kw = kv.Value
+				kw = *kv.Value
 				break
 			}
 		}
@@ -663,7 +663,7 @@ func (dh *DataHelper) Discard(PointID string) error {
 	if km := dh.CurrentDatabaseInfo.KeywordMap; km != nil && len(*km) > 0 {
 		for _, kv := range *km {
 			if strings.ToLower(kv.Key) == `savepoint_release` {
-				kw = kv.Value
+				kw = *kv.Value
 				break
 			}
 		}
